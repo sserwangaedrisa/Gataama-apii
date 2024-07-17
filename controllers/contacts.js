@@ -1,74 +1,62 @@
-const nodemailer = require('nodemailer');
-const db = require('../middleware/db');
+const nodemailer = require("nodemailer");
+const db = require("../middleware/db");
 
 exports.contactForm = async (req, res) => {
-  await db.getConnection((err, connection) => {
-    if (err) {
-      return res.status(500).send({
-        message: process.env.ERROR_MESSAGE,
-      });
-    }
+  try {
     const dt = {
       name: req.body.name,
       email: req.body.email,
       subject: req.body.subject,
       message: req.body.message,
-    }
-    const sql = `INSERT INTO contact SET ?`;
-    connection.query(sql, dt, (err3, result) => {
-      connection.release();
-      if (err3) {
-        return res.status(500).send({
-          message: process.env.ERROR_MESSAGE,
-        });
-      }
-      res.status(201).send({
-        message: "Your message has been sent successfully. kindly await a response via email",
-      });
+    };
+
+    const contact = await prisma.contact.create({
+      data: dt,
     });
-  });
+
+    res.status(201).send({
+      message:
+        "Your message has been sent successfully. Kindly await a response via email.",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      message: process.env.ERROR_MESSAGE,
+    });
+  }
 };
 
 exports.petitionForm = async (req, res) => {
-  await db.getConnection((err, connection) => {
-    if (err) {
-      return res.status(500).send({
-        message: process.env.ERROR_MESSAGE,
-      });
-    }
+  try {
     const dt = {
       country: req.body.country,
       email: req.body.email,
       address: req.body.address,
       phone: req.body.phone,
       names: req.body.names,
-    }
-    const sql = `INSERT INTO petition SET ?`;
-    connection.query(sql, dt, (err3, result) => {
-      connection.release();
-      if (err3) {
-        return res.status(500).send({
-          message: process.env.ERROR_MESSAGE,
-        });
-      }
-      res.status(201).send({
-        message: "You have joined our petition  successfully.",
-      });
-    });
-  });
-};
+    };
 
+    const petition = await prisma.petition.create({
+      data: dt,
+    });
+
+    res.status(201).send({
+      message: "You have joined our petition successfully.",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      message: process.env.ERROR_MESSAGE,
+    });
+  }
+};
 exports.careerForm = async (req, res) => {
-  await db.getConnection((err, connection) => {
-    if (err) {
-      return res.status(500).send({
-        message: process.env.ERROR_MESSAGE,
-      });
-    }
-    let image, sql
+  try {
+    let image;
     if (req.file) {
       image = `${process.env.API_URL}/cvs/${req.file.filename}`;
     }
+
     const dt = {
       name: req.body.name,
       email: req.body.email,
@@ -77,134 +65,134 @@ exports.careerForm = async (req, res) => {
       cv: image,
       message: req.body.message,
       role: req.body.role,
-    }
-    sql = `INSERT INTO careers SET ?`;
-    connection.query(sql, dt, (err3, result) => {
-      connection.release();
-      if (err3) {
-        return res.status(500).send({
-          message: process.env.ERROR_MESSAGE,
-        });
-      }
-      res.status(201).send({
-        message: "Your info has been recieved. kindly await our response via email or phone",
-      });
+    };
+
+    const career = await prisma.career.create({
+      data: dt,
     });
-  });
+
+    res.status(201).send({
+      message:
+        "Your info has been received. Kindly await our response via email or phone.",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      message: process.env.ERROR_MESSAGE,
+    });
+  }
 };
 
 exports.getVolunteers = async (req, res) => {
-  await db.getConnection((err, connection) => {
-    if (err) {
-      return res.status(500).send({
-        message: process.env.ERROR_MESSAGE,
-      });
-    }
-    sql = `SELECT * FROM careers WHERE role = 'volunteer' ORDER BY id DESC LIMIT 0,20`;
-    connection.query(sql, (err3, result) => {
-      connection.release();
-      if (err3) {
-        return res.status(500).send({
-          message: process.env.ERROR_MESSAGE,
-        });
-      }
-      res.status(200).send({
-        volunteers: result,
-      });
+  try {
+    const volunteers = await prisma.career.findMany({
+      where: {
+        role: "volunteer",
+      },
+      orderBy: {
+        id: "desc",
+      },
+      take: 20,
     });
-  });
+
+    res.status(200).send({
+      volunteers: volunteers,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      message: process.env.ERROR_MESSAGE,
+    });
+  }
 };
 
 exports.getPetitions = async (req, res) => {
-  await db.getConnection((err, connection) => {
-    if (err) {
-      return res.status(500).send({
-        message: process.env.ERROR_MESSAGE,
-      });
-    }
-    sql = `SELECT * FROM petition ORDER BY id DESC`;
-    connection.query(sql, (err3, result) => {
-      connection.release();
-      if (err3) {
-        return res.status(500).send({
-          message: process.env.ERROR_MESSAGE,
-        });
-      }
-      res.status(200).send({
-        petitions: result,
-      });
+  try {
+    const petitions = await prisma.petition.findMany({
+      orderBy: {
+        id: "desc",
+      },
     });
-  });
+
+    res.status(200).send({
+      petitions: petitions,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      message: process.env.ERROR_MESSAGE,
+    });
+  }
 };
 
+// Function to get job seekers (excluding volunteers)
 exports.getJobs = async (req, res) => {
-  await db.getConnection((err, connection) => {
-    if (err) {
-      return res.status(500).send({
-        message: process.env.ERROR_MESSAGE,
-      });
-    }
-    sql = `SELECT * FROM careers WHERE role != 'volunteer' ORDER BY id DESC LIMIT 0,20`;
-    connection.query(sql, (err3, result) => {
-      connection.release();
-      if (err3) {
-        return res.status(500).send({
-          message: process.env.ERROR_MESSAGE,
-        });
-      }
-      res.status(200).send({
-        jobSeekers: result,
-      });
+  try {
+    const jobSeekers = await prisma.career.findMany({
+      where: {
+        role: {
+          not: "volunteer",
+        },
+      },
+      orderBy: {
+        id: "desc",
+      },
+      take: 20,
     });
-  });
+
+    res.status(200).send({
+      jobSeekers: jobSeekers,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      message: process.env.ERROR_MESSAGE,
+    });
+  }
 };
 
+// Function to get recent contact messages
 exports.getMessages = async (req, res) => {
-  await db.getConnection((err, connection) => {
-    if (err) {
-      return res.status(500).send({
-        message: process.env.ERROR_MESSAGE,
-      });
-    }
-    sql = `SELECT * FROM contact ORDER BY id DESC LIMIT 0,20`;
-    connection.query(sql, (err3, result) => {
-      connection.release();
-      if (err3) {
-        return res.status(500).send({
-          message: process.env.ERROR_MESSAGE,
-        });
-      }
-      res.status(200).send({
-        messages: result,
-      });
+  try {
+    const messages = await prisma.contact.findMany({
+      orderBy: {
+        id: "desc",
+      },
+      take: 20,
     });
-  });
+
+    res.status(200).send({
+      messages: messages,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      message: process.env.ERROR_MESSAGE,
+    });
+  }
 };
 
+// Function to edit careers form entry
 exports.editCareersForm = async (req, res) => {
-  await db.getConnection((err, connection) => {
-    if (err) {
-      console.log('err', err)
-      return res.status(500).send({
-        message: process.env.ERROR_MESSAGE,
-      });
-    }
-    const entries = Object.keys(req.body);
-    const updates = {};
-    for (let i = 0; i < entries.length; i++) {
-      updates[entries[i]] = Object.values(req.body)[i];
-    }
-    sql = `UPDATE careers SET ? WHERE id = ${req.params.id}`;
-    connection.query(sql, updates, (err3, result) => {
-      connection.release();
-      if (err3) {
-        return res.status(500).send({
-          message: process.env.ERROR_MESSAGE,
-        });
-      }
-      return res.status(200).send({
-        message: "Updated info successfully",
-      });
+  try {
+    const updates = req.body;
+
+    const updatedCareer = await prisma.career.update({
+      where: {
+        id: parseInt(req.params.id),
+      },
+      data: updates,
     });
-  });
+
+    res.status(200).send({
+      message: "Updated info successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      message: process.env.ERROR_MESSAGE,
+    });
+  }
 };
+
+// Disconnect Prisma client when done

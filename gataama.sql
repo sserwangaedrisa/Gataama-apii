@@ -38,6 +38,7 @@ CREATE TABLE `careers` (
   `role` varchar(255) NOT NULL COMMENT 'volunteer or anyother jobtitle',
   `status` int(11) NOT NULL DEFAULT 1,
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp()
+   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -63,6 +64,7 @@ CREATE TABLE `contact` (
   `subject` varchar(255) DEFAULT NULL,
   `message` longtext NOT NULL,
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -83,6 +85,7 @@ CREATE TABLE `notifications` (
   `title` varchar(255) NOT NULL,
   `message` varchar(255) NOT NULL,
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -107,6 +110,7 @@ CREATE TABLE `transactions` (
   `otherNotes` longtext DEFAULT NULL,
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
   `updatedAt` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp()
+   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -134,6 +138,7 @@ CREATE TABLE `users` (
   `status` int(11) NOT NULL DEFAULT 1,
   `createdAt` timestamp NOT NULL DEFAULT current_timestamp(),
   `updatedBy` int(11) DEFAULT NULL
+   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -155,6 +160,7 @@ CREATE TABLE `wallet` (
   `symbol` varchar(255) NOT NULL,
   `amount` int(11) NOT NULL DEFAULT 0,
   `status` int(11) NOT NULL DEFAULT 1
+   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --

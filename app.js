@@ -4,6 +4,7 @@ const morgan = require("morgan");
 const path = require("path");
 const { Server } = require("socket.io");
 const http = require("http");
+const cors = require("cors");
 
 const UserRoutes = require("./routes/user");
 const DonateRoutes = require("./routes/donation");
@@ -13,6 +14,20 @@ const categoryRoutes = require("./routes/category");
 const commentRoutes = require("./routes/comment");
 
 const app = express();
+// const allowedOrigins = ["https://admin.gataama.com", "https://gataama.com"];
+// const corsOptions = {
+//   origin: function (origin, callback) {
+//     if (allowedOrigins.includes(origin)) {
+//       callback(null, true);
+//     } else {
+//       callback(new Error("Not allowed by CORS"));
+//     }
+//   },
+//   methods: ["GET", "POST", "PUT", "DELETE"], // Enable all HTTP methods
+//   allowedHeaders: ["Content-Type", "Authorization"], // Allow specific headers
+// };
+
+app.use(cors());
 app.use(express.json());
 
 app.use("/healthz", (req, res) => {

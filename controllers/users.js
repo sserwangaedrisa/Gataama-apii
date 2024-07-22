@@ -110,8 +110,6 @@ exports.login = async (req, res) => {
       where: { email: req.body.email },
     });
 
-    console.log("User Object:", user);
-
     if (!user) {
       return res.status(406).send({
         message: "Account issue, contact a website admin",
@@ -152,6 +150,7 @@ exports.login = async (req, res) => {
         fullNames: user.fullNames,
         email: user.email,
         status: user.status,
+        role: user.role,
         createdAt: user.createdAt,
       },
     });

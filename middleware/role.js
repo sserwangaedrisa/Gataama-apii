@@ -11,14 +11,13 @@ const isAdmin = async (req, res, next) => {
       return res.status(404).send({ message: "User not found." });
     }
 
-    if (user.role !== "admin") {
+    if (user.role === "admin" || user.role === "countryAdmin") {
+      next();
+    } else {
       return res.status(403).send({ message: "Require Admin Role!" });
     }
-
-    next();
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
 };
-
 module.exports = { isAdmin };

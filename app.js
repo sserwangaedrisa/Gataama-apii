@@ -1,10 +1,10 @@
 require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
-const path = require("path");
 const { Server } = require("socket.io");
 const http = require("http");
 const cors = require("cors");
+const bodyParser = require("body-parser");
 
 const UserRoutes = require("./routes/user");
 const DonateRoutes = require("./routes/donation");
@@ -12,6 +12,7 @@ const ContactRoutes = require("./routes/contact");
 const postRoutes = require("./routes/post");
 const categoryRoutes = require("./routes/category");
 const commentRoutes = require("./routes/comment");
+const path = require("path");
 
 const app = express();
 // const allowedOrigins = ["https://admin.gataama.com", "https://gataama.com"];
@@ -32,9 +33,11 @@ const corsOptions = {
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
-
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
-app.use(express.json());
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/healthz", (req, res) => {
   res.status(200).json({

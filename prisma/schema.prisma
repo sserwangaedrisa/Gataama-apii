@@ -103,8 +103,8 @@ model Post {
   author      User       @relation(fields: [authorId], references: [id])
   categories  Category[] @relation("PostCategories")
   comments    Comment[]
+  imageUrl    String?    
 }
-
 model Category {
   id     Int      @id @default(autoincrement())
   name   String   @unique

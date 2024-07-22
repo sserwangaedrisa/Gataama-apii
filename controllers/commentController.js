@@ -40,7 +40,16 @@ exports.getCommentsByPostId = async (req, res) => {
 exports.getAllComments = async (req, res) => {
   try {
     const comments = await prisma.comment.findMany({
-      include: { author: true, post: true },
+      include: {
+        author: {
+          select: {
+            id: true,
+            fullNames: true,
+            email: true,
+          },
+        },
+        post: true,
+      },
     });
     res.json(comments);
   } catch (error) {
@@ -53,7 +62,16 @@ exports.getCommentById = async (req, res) => {
     const { id } = req.params;
     const comment = await prisma.comment.findUnique({
       where: { id: parseInt(id, 10) },
-      include: { author: true, post: true },
+      include: {
+        author: {
+          select: {
+            id: true,
+            fullNames: true,
+            email: true,
+          },
+        },
+        post: true,
+      },
     });
     if (!comment) {
       return res.status(404).send({ message: "Comment not found" });
@@ -68,22 +86,65 @@ exports.updateComment = async (req, res) => {
   try {
     const { id } = req.params;
     const { content } = req.body;
-    const comment = await prisma.comment.update({
+
+    // Fetch user ID from JWT token
+    const userId = req.userId;
+
+    // Check if the user is authorized to update the comment
+    const comment = await prisma.comment.findUnique({
+      where: { id: parseInt(id, 10) },
+      select: { userId: true },
+    });
+
+    if (!comment) {
+      return res.status(404).send({ message: "Comment not found" });
+    }
+
+    if (comment.userId !== userId) {
+      return res
+        .status(403)
+        .send({ message: "You are not authorized to update this comment" });
+    }
+
+    // Update the comment
+    const updatedComment = await prisma.comment.update({
       where: { id: parseInt(id, 10) },
       data: { content },
     });
-    res.json(comment);
+
+    res.json(updatedComment);
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
 };
-
 exports.deleteComment = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Fetch user ID from JWT token
+    const userId = req.userId;
+
+    // Check if the user is authorized to delete the comment
+    const comment = await prisma.comment.findUnique({
+      where: { id: parseInt(id, 10) },
+      select: { userId: true },
+    });
+
+    if (!comment) {
+      return res.status(404).send({ message: "Comment not found" });
+    }
+
+    if (comment.userId !== userId) {
+      return res
+        .status(403)
+        .send({ message: "You are not authorized to delete this comment" });
+    }
+
+    // Delete the comment
     await prisma.comment.delete({
       where: { id: parseInt(id, 10) },
     });
+
     res.send({ message: "Comment deleted successfully" });
   } catch (error) {
     res.status(500).send({ message: error.message });

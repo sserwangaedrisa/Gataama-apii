@@ -3,22 +3,36 @@ const prisma = new PrismaClient();
 
 exports.createCategory = async (req, res) => {
   try {
-    const { name } = req.body; // Destructuring directly from req.body
-    if (!name) {
-      return res
-        .status(400)
-        .json({ message: "Name is required in the request body" });
-    }
-
-    const category = await prisma.category.create({
-      data: { name },
+    // Fetch user role from database or wherever it's stored
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: { role: true },
     });
-    const response = {
-      status: "success",
-      message: "Category created successfully",
-      data: category,
-    };
-    res.status(201).json(response);
+
+    // Check if the user is authorized to create categories
+    if (user.role === "admin") {
+      const { name } = req.body;
+      if (!name) {
+        return res
+          .status(400)
+          .json({ message: "Name is required in the request body" });
+      }
+
+      const category = await prisma.category.create({
+        data: { name },
+      });
+
+      const response = {
+        status: "success",
+        message: "Category created successfully",
+        data: category,
+      };
+      res.status(201).json(response);
+    } else {
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to create categories" });
+    }
   } catch (error) {
     res.status(500).send({ status: "error", message: error.message });
   }
@@ -63,16 +77,30 @@ exports.updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
     const { name } = req.body;
-    const category = await prisma.category.update({
-      where: { id: parseInt(id, 10) },
-      data: { name },
+
+    // Fetch user role from database or wherever it's stored
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: { role: true },
     });
-    const response = {
-      status: "success",
-      message: "Category updated successfully",
-      data: category,
-    };
-    res.json(response);
+
+    if (user.role === "admin") {
+      const category = await prisma.category.update({
+        where: { id: parseInt(id, 10) },
+        data: { name },
+      });
+
+      const response = {
+        status: "success",
+        message: "Category updated successfully",
+        data: category,
+      };
+      res.json(response);
+    } else {
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to update categories" });
+    }
   } catch (error) {
     res.status(500).send({ status: "error", message: error.message });
   }
@@ -81,10 +109,24 @@ exports.updateCategory = async (req, res) => {
 exports.deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    await prisma.category.delete({
-      where: { id: parseInt(id, 10) },
+
+    // Fetch user role from database or wherever it's stored
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId },
+      select: { role: true },
     });
-    res.send({ message: "Category deleted successfully" });
+
+    if (user.role === "admin") {
+      await prisma.category.delete({
+        where: { id: parseInt(id, 10) },
+      });
+
+      res.send({ message: "Category deleted successfully" });
+    } else {
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to delete categories" });
+    }
   } catch (error) {
     res.status(500).send({ status: "error", message: error.message });
   }

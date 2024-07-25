@@ -99,6 +99,7 @@ exports.getAllPosts = async (req, res) => {
 exports.getPostById = async (req, res) => {
   try {
     const { id } = req.params;
+
     const post = await prisma.post.findUnique({
       where: { id: parseInt(id, 10) },
       include: {
@@ -111,6 +112,7 @@ exports.getPostById = async (req, res) => {
         },
         categories: true,
         comments: {
+          where: { parentId: null }, // Fetch only top-level comments
           include: {
             author: {
               select: {
@@ -120,7 +122,6 @@ exports.getPostById = async (req, res) => {
               },
             },
             replies: {
-              // Include replies to comments
               include: {
                 author: {
                   select: {
@@ -135,15 +136,25 @@ exports.getPostById = async (req, res) => {
         },
       },
     });
+
     if (!post) {
       return res.status(404).send({ message: "Post not found" });
     }
+
+    // Remove duplicate comments manually
+    const uniqueComments = post.comments.filter((comment, index, self) => {
+      // Filter out comments that have the same id as previous ones
+      return index === self.findIndex((c) => c.id === comment.id);
+    });
+
+    // Replace comments with filtered uniqueComments
+    post.comments = uniqueComments;
+
     res.json(post);
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
 };
-
 exports.updatePost = async (req, res) => {
   upload(req, res, async (err) => {
     if (err) {

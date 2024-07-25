@@ -70,8 +70,9 @@ model Transaction {
 model User {
   id         Int       @id @default(autoincrement())
   fullNames  String
-  email      String
-  password   String
+   email      String    @unique
+  password   String?
+  googleId  String?    @unique
   status     Int       @default(1)
   role       String    @default("user")
   createdAt  DateTime  @default(now())

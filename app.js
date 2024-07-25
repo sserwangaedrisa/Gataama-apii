@@ -13,20 +13,11 @@ const postRoutes = require("./routes/post");
 const categoryRoutes = require("./routes/category");
 const commentRoutes = require("./routes/comment");
 const path = require("path");
+const session = require("express-session");
+const passport = require("passport");
+// require("./passport");
 
 const app = express();
-// const allowedOrigins = ["https://admin.gataama.com", "https://gataama.com"];
-// const corsOptions = {
-//   origin: function (origin, callback) {
-//     if (allowedOrigins.includes(origin)) {
-//       callback(null, true);
-//     } else {
-//       callback(new Error("Not allowed by CORS"));
-//     }
-//   },
-//   methods: ["GET", "POST", "PUT", "DELETE"], // Enable all HTTP methods
-//   allowedHeaders: ["Content-Type", "Authorization"], // Allow specific headers
-// };
 
 const corsOptions = {
   origin: "*",
@@ -36,6 +27,15 @@ const corsOptions = {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
+app.use(
+  session({
+    secret: "your-secret-key",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+
+app.use(passport.initialize());
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 

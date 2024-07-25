@@ -1,23 +1,51 @@
-const express = require('express');
-const UserController = require('../controllers/users');
-const checkAuth = require('../middleware/check-auth');
-const validation = require('../middleware/validation');
-
+const express = require("express");
+const UserController = require("../controllers/users");
+const checkAuth = require("../middleware/check-auth");
+const validation = require("../middleware/validation");
+const passport = require("passport");
 const router = express.Router();
+const verifyToken = require("../middleware/auth");
 
-router.post('/register', validation.registerUserPolicy, UserController.register);
-
-router.post('/login', validation.loginUserPolicy, UserController.login);
-
-router.patch('/forgotPassword', validation.forgotPasswordPolicy, UserController.forgotPassword);
-
-router.patch(
-  '/profile/:id',
-  checkAuth,
-  validation.userprofilePolicy,
-  UserController.fillProfile,
+router.post(
+  "/register",
+  validation.registerUserPolicy,
+  UserController.register
 );
 
-router.delete('/:id', checkAuth, UserController.deleteUser);
+router.post("/login", validation.loginUserPolicy, UserController.login);
+
+router.patch(
+  "/forgotPassword",
+  validation.forgotPasswordPolicy,
+  UserController.forgotPassword
+);
+
+router.patch(
+  "/profile/:id",
+  checkAuth,
+  validation.userprofilePolicy,
+  UserController.fillProfile
+);
+
+router.delete("/:id", checkAuth, UserController.deleteUser);
+
+router.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    session: false,
+    failureRedirect: "/login",
+  }),
+  (req, res) => {
+    const { token } = req.user;
+    res.redirect(`${process.env.CLIENT_URL}?token=${token}`);
+  }
+);
+
+router.get("/check-user", verifyToken, UserController.getUserFromToken);
 
 module.exports = router;

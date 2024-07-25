@@ -5,10 +5,17 @@ const nodemailer = require("nodemailer");
 const db = require("../middleware/db");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
 exports.register = async (req, res) => {
   // const pwd = `${Math.floor(1000 + Math.random() * 9000)}rfh`;
   try {
+    if (req.body.password == "") {
+      return res.status(403).send({
+        message: "please add password",
+      });
+    }
     const existingUser = await prisma.user.findFirst({
       where: { email: req.body.email },
     });
@@ -317,4 +324,79 @@ exports.deleteUser = async (req, res, next) => {
       });
     });
   });
+};
+
+const generateToken = (user) => {
+  return jwt.sign(
+    {
+      id: user.id,
+      email: user.email,
+      fullNames: user.fullNames,
+      googleId: user.googleId,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" }
+  );
+};
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    },
+    async (token, tokenSecret, profile, done) => {
+      try {
+        let user = await prisma.user.findUnique({
+          where: { googleId: profile.id },
+        });
+
+        if (!user) {
+          user = await prisma.user.findUnique({
+            where: { email: profile.emails[0].value },
+          });
+          if (user) {
+            user = await prisma.user.update({
+              where: { id: user.id },
+              data: { googleId: profile.id },
+            });
+          } else {
+            user = await prisma.user.create({
+              data: {
+                fullNames: profile.displayName,
+                email: profile.emails[0].value,
+                googleId: profile.id,
+              },
+            });
+          }
+        }
+
+        const token = generateToken(user);
+        return done(null, { user, token });
+      } catch (err) {
+        return done(err, null);
+      }
+    }
+  )
+);
+
+passport.serializeUser((user, done) => {
+  done(null, user);
+});
+
+passport.deserializeUser((obj, done) => {
+  done(null, obj);
+});
+
+exports.getUserFromToken = (req, res) => {
+  try {
+    const token = req.headers.authorization.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    res.status(200).json(decoded);
+  } catch (error) {
+    console.error("Token verification error:", error);
+    res.status(401).json({ error: "Invalid token" });
+  }
 };

@@ -5,6 +5,7 @@ const verifyToken = require("../middleware/auth");
 const { isAdmin } = require("../middleware/role");
 
 router.post("/", verifyToken, isAdmin, postController.createPost);
+router.get("/search", postController.search);
 router.get("/", postController.getAllPosts);
 router.get("/:id", postController.getPostById);
 router.put("/:id", verifyToken, isAdmin, postController.updatePost);

@@ -9,7 +9,7 @@ exports.createPost = async (req, res) => {
     }
 
     try {
-      const { title, content, published, categoryIds } = req.body;
+      const { title, content, published, categoryIds, isFeatured } = req.body;
       const imageUrl = req.file ? `/uploads/blog/${req.file.filename}` : null;
       const authorId = req.userId; // Extract userId from verified token
 
@@ -21,6 +21,7 @@ exports.createPost = async (req, res) => {
           content,
           published,
           imageUrl,
+          isFeatured,
           author: { connect: { id: authorId } },
           categories: {
             connect: { id: categoryIds },
@@ -46,6 +47,76 @@ exports.createPost = async (req, res) => {
       await prisma.$disconnect();
     }
   });
+};
+
+exports.search = async (req, res) => {
+  const { title, category } = req.query;
+
+  try {
+    const posts = await prisma.post.findMany({
+      where: {
+        AND: [
+          title
+            ? {
+                title: {
+                  contains: title,
+                  mode: "insensitive",
+                },
+              }
+            : {},
+          category
+            ? {
+                categories: {
+                  some: {
+                    name: {
+                      equals: category,
+                      mode: "insensitive",
+                    },
+                  },
+                },
+              }
+            : {},
+        ],
+      },
+      include: {
+        categories: true,
+        author: {
+          select: {
+            id: true,
+            fullNames: true,
+            email: true,
+          },
+        },
+        comments: {
+          include: {
+            author: {
+              select: {
+                id: true,
+                fullNames: true,
+                email: true,
+              },
+            },
+            replies: {
+              include: {
+                author: {
+                  select: {
+                    id: true,
+                    fullNames: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    res.json(posts);
+  } catch (error) {
+    console.error("Search and filter error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 };
 
 exports.getAllPosts = async (req, res) => {
@@ -155,6 +226,7 @@ exports.getPostById = async (req, res) => {
     res.status(500).send({ message: error.message });
   }
 };
+
 exports.updatePost = async (req, res) => {
   upload(req, res, async (err) => {
     if (err) {
@@ -162,7 +234,7 @@ exports.updatePost = async (req, res) => {
     }
 
     const { id } = req.params;
-    const { title, content, published, categoryIds } = req.body;
+    const { title, content, published, categoryIds, isFeatured } = req.body;
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
     const userId = req.userId;
     const userRole = req.userRole; // Assuming you set userRole in the verifyToken middleware
@@ -178,8 +250,9 @@ exports.updatePost = async (req, res) => {
             content,
             published,
             imageUrl,
+            isFeatured,
             categories: {
-              connect: { id: categoryIds },
+              connect: categoryIds.map((categoryId) => ({ id: categoryId })),
             },
           },
         });
@@ -209,7 +282,7 @@ exports.updatePost = async (req, res) => {
             published,
             imageUrl,
             categories: {
-              connect: { id: categoryIds },
+              connect: categoryIds.map((categoryId) => ({ id: categoryId })),
             },
           },
         });
@@ -229,6 +302,7 @@ exports.updatePost = async (req, res) => {
     }
   });
 };
+
 exports.deletePost = async (req, res) => {
   try {
     const { id } = req.params;

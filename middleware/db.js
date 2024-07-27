@@ -13,7 +13,7 @@ const db = mysql.createPool({
   password: process.env.DB_PWD,
   database: process.env.DB,
   ssl: {
-    ca: fs.readFileSync("/home/alpha/Downloads/ca.pem"),
+    // ca: fs.readFileSync("/home/alpha/Downloads/ca.pem"),
     rejectUnauthorized: true, // Ensure SSL certificate verification (recommended)
   },
 });

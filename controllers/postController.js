@@ -3,51 +3,55 @@ const prisma = new PrismaClient();
 const upload = require("../middleware/image-upload");
 
 exports.createPost = async (req, res) => {
-  upload.single('image')(req, res, async (err) => {
-    console.log("image is uploadng");
-    if (err) {
-	console.log(err);
-      return res.status(400).send({ message: err.message });
-    }
-    try {
-      const { title, content, published, categoryIds, isFeatured } = req.body;
-      const imageUrl = req.file ? `/uploads/blog/${req.file.filename}` : null;
-      const authorId = req.userId; // Extract userId from verified token
+  try {
+    // Extract fields from the request body
+    const { title, content, published, categoryIds, isFeatured } = req.body;
+    const imageUrl = req.file ? `/uploads/blog/${req.file.filename}` : null;
+    const authorId = req.userId; // Extract userId from verified token
 
-      console.log("Generated Image URL:", imageUrl);
+    // Convert published and isFeatured from strings to booleans
+    const parsedPublished = published === "true"; // "true" string to true boolean, "false" string to false boolean
+    const parsedIsFeatured = isFeatured === "true"; // "true" string to true boolean, "false" string to false boolean
 
-      const post = await prisma.post.create({
-        data: {
-          title,
-          content,
-          published,
-          imageUrl,
-          isFeatured,
-          author: { connect: { id: authorId } },
-          categories: {
-            connect: { id: categoryIds },
+    // Ensure categoryIds is an integer
+    const parsedCategoryId = parseInt(categoryIds, 10); // Convert categoryIds to an integer
+
+    console.log("Generated Image URL:", imageUrl);
+
+    // Create post with parsed values
+    const post = await prisma.post.create({
+      data: {
+        title,
+        content,
+        published: parsedPublished,
+        imageUrl,
+        isFeatured: parsedIsFeatured,
+        author: { connect: { id: authorId } },
+        categories: {
+          connect: { id: parsedCategoryId }, // Connect single category ID
+        },
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            fullNames: true,
+            email: true,
           },
         },
-        include: {
-          author: {
-            select: {
-              id: true,
-              fullNames: true,
-              email: true,
-            },
-          },
-          categories: true,
-        },
-      });
+        categories: true,
+      },
+    });
 
-      res.json(post);
-    } catch (error) {
-      console.error("Error creating post:", error);
-      res.status(500).send({ message: "Error creating post", error : error });
-    } finally {
-      await prisma.$disconnect();
-    }
-  });
+    res.json(post);
+  } catch (error) {
+    console.error("Error creating post:", error);
+    res
+      .status(500)
+      .send({ message: "Error creating post", error: error.message });
+  } finally {
+    await prisma.$disconnect();
+  }
 };
 
 exports.search = async (req, res) => {

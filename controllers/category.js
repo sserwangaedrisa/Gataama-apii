@@ -3,6 +3,7 @@ const prisma = new PrismaClient();
 
 exports.createCategory = async (req, res) => {
   try {
+    console.log("-----------------------");
     // Fetch user role from database or wherever it's stored
     const user = await prisma.user.findUnique({
       where: { id: req.userId },

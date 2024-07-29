@@ -3,8 +3,15 @@ const postController = require("../controllers/postController");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const { isAdmin } = require("../middleware/role");
+const upload = require("../middleware/image-upload");
 
-router.post("/", verifyToken, isAdmin, postController.createPost);
+router.post(
+  "/",
+  verifyToken,
+  isAdmin,
+  upload.single("image"),
+  postController.createPost
+);
 router.get("/search", postController.search);
 router.get("/", postController.getAllPosts);
 router.get("/:id", postController.getPostById);

@@ -3,11 +3,11 @@ const prisma = new PrismaClient();
 const upload = require("../middleware/image-upload");
 
 exports.createPost = async (req, res) => {
-  upload(req, res, async (err) => {
+  upload.single('image')(req, res, async (err) => {
+    console.log(res, req);
     if (err) {
-      return res.status(400).send({ message: err });
+      return res.status(400).send({ message: err.message });
     }
-
     try {
       const { title, content, published, categoryIds, isFeatured } = req.body;
       const imageUrl = req.file ? `/uploads/blog/${req.file.filename}` : null;

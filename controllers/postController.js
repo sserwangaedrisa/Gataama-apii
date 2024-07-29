@@ -4,8 +4,9 @@ const upload = require("../middleware/image-upload");
 
 exports.createPost = async (req, res) => {
   upload.single('image')(req, res, async (err) => {
-    console.log(res, req);
+    console.log("image is uploadng");
     if (err) {
+	console.log(err);
       return res.status(400).send({ message: err.message });
     }
     try {
@@ -42,7 +43,7 @@ exports.createPost = async (req, res) => {
       res.json(post);
     } catch (error) {
       console.error("Error creating post:", error);
-      res.status(500).send({ message: "Error creating post" });
+      res.status(500).send({ message: "Error creating post", error : error });
     } finally {
       await prisma.$disconnect();
     }

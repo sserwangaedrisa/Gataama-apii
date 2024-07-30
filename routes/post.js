@@ -15,7 +15,13 @@ router.post(
 router.get("/search", postController.search);
 router.get("/", postController.getAllPosts);
 router.get("/:id", postController.getPostById);
-router.put("/:id", verifyToken, isAdmin, postController.updatePost);
+router.put(
+  "/:id",
+  verifyToken,
+  isAdmin,
+  upload.single("image"),
+  postController.updatePost
+);
 router.delete("/:id", verifyToken, isAdmin, postController.deletePost);
 
 module.exports = router;

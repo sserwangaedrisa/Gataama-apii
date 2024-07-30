@@ -9,9 +9,8 @@ exports.createPost = async (req, res) => {
     const imageUrl = req.file ? `/uploads/blog/${req.file.filename}` : null;
     const authorId = req.userId; // Extract userId from verified token
 
-    // Convert published and isFeatured from strings to booleans
-    const parsedPublished = published === "true"; // "true" string to true boolean, "false" string to false boolean
-    const parsedIsFeatured = isFeatured === "true"; // "true" string to true boolean, "false" string to false boolean
+    const parsedPublished = published === "true";
+    const parsedIsFeatured = isFeatured === "true";
 
     // Ensure categoryIds is an integer
     const parsedCategoryId = parseInt(categoryIds, 10); // Convert categoryIds to an integer
@@ -240,9 +239,16 @@ exports.updatePost = async (req, res) => {
 
     const { id } = req.params;
     const { title, content, published, categoryIds, isFeatured } = req.body;
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
-    const userId = req.userId;
-    const userRole = req.userRole; // Assuming you set userRole in the verifyToken middleware
+    const imageUrl = req.file ? `/uploads/blog/${req.file.filename}` : null;
+    const authorId = req.userId; // Extract userId from verified token
+
+    const parsedPublished = published === "true";
+    const parsedIsFeatured = isFeatured === "true";
+
+    // Ensure categoryIds is an integer
+    const parsedCategoryId = parseInt(categoryIds, 10); // Convert categoryIds to an integer
+
+    const userRole = req.userRole; //
 
     try {
       // Check if user is super admin or country admin
@@ -253,11 +259,12 @@ exports.updatePost = async (req, res) => {
           data: {
             title,
             content,
-            published,
+            published: parsedPublished,
             imageUrl,
-            isFeatured,
+            isFeatured: parsedIsFeatured,
+            // author: { connect: { id: authorId } },
             categories: {
-              connect: categoryIds.map((categoryId) => ({ id: categoryId })),
+              connect: { id: parsedCategoryId }, // Connect single category ID
             },
           },
         });
@@ -284,10 +291,12 @@ exports.updatePost = async (req, res) => {
           data: {
             title,
             content,
-            published,
+            published: parsedPublished,
             imageUrl,
+            isFeatured: parsedIsFeatured,
+            author: { connect: { id: authorId } },
             categories: {
-              connect: categoryIds.map((categoryId) => ({ id: categoryId })),
+              connect: { id: parsedCategoryId }, // Connect single category ID
             },
           },
         });
@@ -319,111 +328,3 @@ exports.deletePost = async (req, res) => {
     res.status(500).send({ message: error.message });
   }
 };
-
-// [
-//   {
-//     id: 1,
-//     title: "My First Post",
-//     content: "This is the content of my first post.",
-//     published: true,
-//     createdAt: "2024-07-14T07:32:50.168Z",
-//     updatedAt: "2024-07-14T07:32:50.168Z",
-//     authorId: 1,
-//     author: {
-//       id: 1,
-//       fullNames: "admin",
-//       email: "admin@gmail.com",
-//     },
-//     categories: [
-//       {
-//         id: 1,
-//         name: "Technology",
-//       },
-//     ],
-//     comments: [
-//       {
-//         id: 1,
-//         content: "This is a comment.",
-//         createdAt: "2024-07-14T07:37:43.024Z",
-//         postId: 1,
-//         authorId: 1,
-//         parentId: null,
-//         author: {
-//           id: 1,
-//           fullNames: "admin",
-//           email: "admin@gmail.com",
-//         },
-//         replies: [
-//           {
-//             id: 3,
-//             content: "This is a reply to the top-level comment",
-//             createdAt: "2024-07-14T07:49:32.116Z",
-//             postId: 1,
-//             authorId: 1,
-//             parentId: 1,
-//             author: {
-//               id: 1,
-//               fullNames: "admin",
-//               email: "admin@gmail.com",
-//             },
-//           },
-//           {
-//             id: 4,
-//             content: "Tvel comment",
-//             createdAt: "2024-07-14T07:51:55.194Z",
-//             postId: 1,
-//             authorId: 1,
-//             parentId: 1,
-//             author: {
-//               id: 1,
-//               fullNames: "admin",
-//               email: "admin@gmail.com",
-//             },
-//           },
-//         ],
-//       },
-//       {
-//         id: 2,
-//         content: "This is another comment tho.",
-//         createdAt: "2024-07-14T07:48:24.531Z",
-//         postId: 1,
-//         authorId: 1,
-//         parentId: null,
-//         author: {
-//           id: 1,
-//           fullNames: "admin",
-//           email: "admin@gmail.com",
-//         },
-//         replies: [],
-//       },
-//       {
-//         id: 3,
-//         content: "This is a reply to the top-level comment",
-//         createdAt: "2024-07-14T07:49:32.116Z",
-//         postId: 1,
-//         authorId: 1,
-//         parentId: 1,
-//         author: {
-//           id: 1,
-//           fullNames: "admin",
-//           email: "admin@gmail.com",
-//         },
-//         replies: [],
-//       },
-//       {
-//         id: 4,
-//         content: "Tvel comment",
-//         createdAt: "2024-07-14T07:51:55.194Z",
-//         postId: 1,
-//         authorId: 1,
-//         parentId: 1,
-//         author: {
-//           id: 1,
-//           fullNames: "admin",
-//           email: "admin@gmail.com",
-//         },
-//         replies: [],
-//       },
-//     ],
-//   },
-// ];

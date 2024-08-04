@@ -66,23 +66,6 @@ model Transaction {
 
   @@map("transactions")
 }
-
-model User {
-  id         Int       @id @default(autoincrement())
-  fullNames  String
-   email      String    @unique
-  password   String?
-  googleId  String?    @unique
-  status     Int       @default(1)
-  role       String    @default("user")
-  createdAt  DateTime  @default(now())
-  updatedBy  Int?
-  posts      Post[]
-  comments   Comment[]
-
-  @@map("users")
-}
-
 model Wallet {
   id        Int       @id @default(autoincrement())
   currency  String
@@ -107,6 +90,7 @@ model Post {
   comments    Comment[]
   imageUrl    String?    
 }
+
 model Category {
   id     Int      @id @default(autoincrement())
   name   String   @unique
@@ -124,4 +108,55 @@ model Comment {
   parentId  Int?
   parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id])
   replies   Comment[] @relation("CommentReplies")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  fullNames String
+  email     String   @unique
+  password  String?
+  googleId  String?  @unique
+  status    Int      @default(1)
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  updatedBy Int?
+
+  // Each user can be an admin for only one country
+  country   Country? @relation(fields: [countryId], references: [id])
+  countryId Int?     @unique
+
+  posts     Post[]
+  comments  Comment[]
+
+  @@map("users")
+  Country Country[] @relation("CountryAdmins")
+}
+
+model Country {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  // A country can have multiple admins
+  admins      User[]       @relation("CountryAdmins")
+  departments Department[]
+  
+  @@map("countries")
+  User User[]
+}
+
+model Department {
+  id         Int           @id @default(autoincrement())
+  name       String
+  countryId  Int
+  imageUrl   String?
+  country    Country       @relation(fields: [countryId], references: [id])
+  post       DepartmentPost?
+}
+
+model DepartmentPost {
+  id           Int         @id @default(autoincrement())
+  title        String
+  content      String
+  imageUrl     String?
+  departmentId Int         @unique
+  department   Department  @relation(fields: [departmentId], references: [id])
 }

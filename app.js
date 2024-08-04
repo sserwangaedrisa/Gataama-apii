@@ -16,6 +16,9 @@ const ContactRoutes = require("./routes/contact");
 const postRoutes = require("./routes/post");
 const categoryRoutes = require("./routes/category");
 const commentRoutes = require("./routes/comment");
+const countryRoutes = require("./routes/country");
+const departmentRoutes = require("./routes/department");
+const departmentPostRoutes = require("./routes/departmentPost");
 
 const app = express();
 
@@ -54,6 +57,10 @@ app.use("/comments", commentRoutes);
 app.use("/user", UserRoutes);
 app.use("/donate", DonateRoutes);
 app.use("/contact", ContactRoutes);
+
+app.use("/countries", countryRoutes);
+app.use("/department", departmentRoutes);
+app.use("/department-post", departmentPostRoutes);
 
 // Handle errors
 app.use((req, res, next) => {

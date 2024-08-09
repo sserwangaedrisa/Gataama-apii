@@ -256,7 +256,7 @@ exports.getPopularPosts = async (req, res) => {
         categories: true,
         reactions: true,
       },
-      take: 8, // Return only the top 10 popular posts
+      take: 6, // Return only the top 10 popular posts
     });
 
     res.json(popularPosts);

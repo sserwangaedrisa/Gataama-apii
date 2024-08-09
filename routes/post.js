@@ -1,5 +1,6 @@
 const express = require("express");
 const postController = require("../controllers/post");
+const reactionController = require("../controllers/reaction");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const { isAdmin } = require("../middleware/role");
@@ -13,8 +14,10 @@ router.post(
   postController.createPost
 );
 router.get("/search", postController.search);
+router.get('/popular', postController.getPopularPosts);
 router.get("/", postController.getAllPosts);
 router.get("/:id", postController.getPostById);
+
 router.put(
   "/:id",
   verifyToken,
@@ -23,5 +26,16 @@ router.put(
   postController.updatePost
 );
 router.delete("/:id", verifyToken, isAdmin, postController.deletePost);
+
+
+///reaction route
+router.post('/:id/reactions', verifyToken, reactionController.addReaction);
+
+
+router.delete('/:id/reactions', verifyToken, reactionController.removeReaction);
+
+
+// Route to get all reactions for a post
+router.get('/:id/reactions', reactionController.getReactions);
 
 module.exports = router;

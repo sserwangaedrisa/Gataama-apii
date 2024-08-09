@@ -175,6 +175,13 @@ exports.getPostById = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Increment the views count
+    await prisma.post.update({
+      where: { id: parseInt(id, 10) },
+      data: { views: { increment: 1 } },
+    });
+
+    // Fetch the post details with author, categories, comments, and reactions
     const post = await prisma.post.findUnique({
       where: { id: parseInt(id, 10) },
       include: {
@@ -209,6 +216,7 @@ exports.getPostById = async (req, res) => {
             },
           },
         },
+        reactions: true, // Include reactions in the response
       },
     });
 
@@ -216,9 +224,8 @@ exports.getPostById = async (req, res) => {
       return res.status(404).send({ message: "Post not found" });
     }
 
-    // Remove duplicate comments manually
+    // Remove duplicate comments manually (if necessary)
     const uniqueComments = post.comments.filter((comment, index, self) => {
-      // Filter out comments that have the same id as previous ones
       return index === self.findIndex((c) => c.id === comment.id);
     });
 
@@ -230,6 +237,35 @@ exports.getPostById = async (req, res) => {
     res.status(500).send({ message: error.message });
   }
 };
+
+exports.getPopularPosts = async (req, res) => {
+  try {
+    const popularPosts = await prisma.post.findMany({
+      orderBy: [
+        { views: 'desc' }, // Sort by views first
+        { reactions: { _count: 'desc' } }, // Then sort by the number of reactions
+      ],
+      include: {
+        author: {
+          select: {
+            id: true,
+            fullNames: true,
+            email: true,
+          },
+        },
+        categories: true,
+        reactions: true,
+      },
+      take: 8, // Return only the top 10 popular posts
+    });
+
+    res.json(popularPosts);
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  }
+};
+
+
 
 exports.updatePost = async (req, res) => {
   upload(req, res, async (err) => {

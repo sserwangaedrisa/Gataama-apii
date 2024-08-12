@@ -163,10 +163,12 @@ model Country {
 model Department {
   id         Int           @id @default(autoincrement())
   name       String
+  title        String?
+  content      String?
   countryId  Int
   imageUrl   String?
   country    Country       @relation(fields: [countryId], references: [id])
-  post       DepartmentPost?
+  // post       DepartmentPost?
 }
 
 model DepartmentPost {
@@ -175,5 +177,5 @@ model DepartmentPost {
   content      String
   imageUrl     String?
   departmentId Int         @unique
-  department   Department  @relation(fields: [departmentId], references: [id])
+  // department   Department  @relation(fields: [departmentId], references: [id])
 }

@@ -6,9 +6,7 @@ exports.getDepartmentsByCountry = async (req, res) => {
   try {
     const departments = await prisma.department.findMany({
       where: { countryId: parseInt(countryId) },
-      include: {
-        post: true,
-      },
+     
     });
     res.json(departments);
   } catch (err) {
@@ -16,16 +14,41 @@ exports.getDepartmentsByCountry = async (req, res) => {
   }
 };
 
+exports.getDepartmentById = async (req, res) => {
+  const { countryId, id } = req.params;
+  try {
+    const department = await prisma.department.findFirst({
+      where: {
+        id: parseInt(id),
+        countryId: parseInt(countryId)
+      },
+     
+    });
+
+    if (!department) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    res.json(department);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+
 // Create a new department (Country Admin only)
 exports.createDepartment = async (req, res) => {
   const { countryId } = req.params;
-  const { name } = req.body;
+  const { name, title, content } = req.body;
   const imageUrl = req.file ? `/uploads/blog/${req.file.filename}` : null;
 
   try {
     const department = await prisma.department.create({
       data: {
         name,
+        title,
+        content,
         countryId: parseInt(countryId),
         imageUrl: imageUrl,
       },
@@ -39,7 +62,7 @@ exports.createDepartment = async (req, res) => {
 // Update a department (Country Admin only)
 exports.updateDepartment = async (req, res) => {
   const { countryId, departmentId } = req.params;
-  const { name } = req.body;
+  const { name, title, content } = req.body;
   const imageUrl = req.file ? `/uploads/blog/${req.file.filename}` : null;
 
   try {
@@ -50,6 +73,8 @@ exports.updateDepartment = async (req, res) => {
       },
       data: {
         name,
+        title,
+        content,
         imageUrl: imageUrl,
       },
     });

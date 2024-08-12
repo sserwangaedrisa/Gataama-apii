@@ -4,7 +4,8 @@ const departmentController = require("../controllers/department");
 const verifyToken = require("../middleware/auth");
 const { isCountryAdmin } = require("../middleware/role");
 const upload = require("../middleware/image-upload");
-
+router.get(
+  "/:countryId/post/:id", departmentController.getDepartmentById)
 router.get("/:countryId", departmentController.getDepartmentsByCountry);
 router.post(
   "/:countryId",
@@ -13,6 +14,7 @@ router.post(
   upload.single("image"),
   departmentController.createDepartment
 );
+
 router.put(
   "/:countryId/departments/:departmentId",
   verifyToken,

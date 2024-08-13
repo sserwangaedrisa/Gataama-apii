@@ -5,6 +5,7 @@ const validation = require("../middleware/validation");
 const passport = require("passport");
 const router = express.Router();
 const verifyToken = require("../middleware/auth");
+const { isAdmin } = require("../middleware/role");
 
 router.post(
   "/register",
@@ -27,12 +28,15 @@ router.patch(
   UserController.fillProfile
 );
 
-router.delete("/:id", checkAuth, UserController.deleteUser);
+router.delete("/:id",verifyToken, isAdmin, UserController.deleteUser);
 
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
+
+router.get(
+  "/admins", checkAuth, UserController.getAdmin)
 
 router.get(
   "/google/callback",

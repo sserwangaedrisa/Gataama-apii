@@ -168,6 +168,34 @@ exports.login = async (req, res) => {
   }
 };
 
+exports.getAdmin = async (req, res) => {
+  try {
+    const admins = await prisma.user.findMany({
+      where: {
+        role: {
+          in: ['admin', 'countryAdmin']
+        }
+      }
+    });
+
+    return res.status(200).send({
+      message: 'Admins retrieved successfully',
+      admins: admins.map(admin => ({
+        id: admin.id,
+        fullNames: admin.fullNames,
+        email: admin.email,
+        role: admin.role,
+        createdAt: admin.createdAt,
+      }))
+    });
+  } catch (error) {
+    return res.status(500).send({
+      message: error.message,
+    });
+  }
+}
+
+
 exports.forgotPassword = async (req, res) => {
   // Generate a temporary password
   const pwd = `${Math.floor(1000 + Math.random() * 9000)}rfh`;

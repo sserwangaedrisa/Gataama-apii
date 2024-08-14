@@ -34,6 +34,7 @@ exports.createCountry = async (req, res) => {
 };
 
 // Get all countries (Public)
+// Get all countries (Public)
 exports.getAllCountries = async (req, res) => {
   try {
     const countries = await prisma.country.findMany({
@@ -42,7 +43,16 @@ exports.getAllCountries = async (req, res) => {
         admins: true, // Include admins in the response
       },
     });
-    res.json(countries);
+
+    // Transform the data to include only admin IDs
+    const transformedCountries = countries.map(country => ({
+      id: country.id,
+      name: country.name,
+      departments: country.departments,
+      admins: country.admins.map(admin => admin.id), 
+    }));
+
+    res.json(transformedCountries);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -59,42 +69,189 @@ exports.getCountryById = async (req, res) => {
         admins: true, // Include admins in the response
       },
     });
+
     if (!country) return res.status(404).json({ error: "Country not found" });
-    res.json(country);
+
+    // Transform the data to include only admin IDs
+    const transformedCountry = {
+      id: country.id,
+      name: country.name,
+      departments: country.departments,
+      admins: country.admins.map(admin => admin.id),
+    };
+
+    res.json(transformedCountry);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.updateCountry = async (req, res) => {
+  const { id } = req.params;
+  const { name, currentAdminId, newAdminId, addAdminId } = req.body;
+
+  try {
+    // Fetch the current country details, including admins
+    const country = await prisma.country.findUnique({
+      where: { id: parseInt(id) },
+      include: { admins: true },
+    });
+
+    if (!country) {
+      return res.status(404).json({ error: "Country not found" });
+    }
+
+    let updatedData = {};
+
+    // Update the country name if provided
+    if (name) {
+      updatedData.name = name;
+    }
+
+    // Add a new admin to the country if `addAdminId` is provided
+    if (addAdminId) {
+      const newAdmin = await prisma.user.findUnique({
+        where: { id: addAdminId },
+        select: { role: true },
+      });
+
+      if (!newAdmin || newAdmin.role !== "countryAdmin") {
+        return res.status(400).json({ error: "The provided user is not a country admin" });
+      }
+
+      updatedData.admins = {
+        connect: { id: addAdminId },
+      };
+    }
+
+    // Replace the current admin with the new admin if both `currentAdminId` and `newAdminId` are provided
+    if (currentAdminId && newAdminId) {
+      const currentAdminExists = country.admins.some(
+        (admin) => admin.id === currentAdminId
+      );
+
+      if (!currentAdminExists) {
+        return res.status(400).json({ error: "The specified current admin is not currently an admin of this country" });
+      }
+
+      const newAdmin = await prisma.user.findUnique({
+        where: { id: newAdminId },
+        select: { role: true },
+      });
+
+      if (!newAdmin || newAdmin.role !== "countryAdmin") {
+        return res.status(400).json({ error: "The provided new user is not a country admin" });
+      }
+
+      updatedData.admins = {
+        disconnect: { id: currentAdminId }, // Remove the current admin
+        connect: { id: newAdminId },        // Add the new admin
+      };
+    }
+
+    // Update the country with the accumulated updates
+    const updatedCountry = await prisma.country.update({
+      where: { id: parseInt(id) },
+      data: updatedData,
+      include: {
+        admins: true, // Include the updated admins in the response
+      },
+    });
+
+    const transformedCountry = {
+      id: updatedCountry.id,
+      name: updatedCountry.name,
+      departments: updatedCountry.departments,
+      admins: updatedCountry.admins.map(admin => admin.id),
+    };
+
+    res.json(transformedCountry);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+
+
+exports.removeCountryAdmin = async (req, res) => {
+  const { id } = req.params;
+  const { removeAdminId } = req.body; // Expecting a single admin ID to remove
+
+  try {
+    // Fetch the current country details
+    const country = await prisma.country.findUnique({
+      where: { id: parseInt(id) },
+      include: { admins: true }, // Include current admins
+    });
+
+    if (!country) {
+      return res.status(404).json({ error: "Country not found" });
+    }
+
+    // Check if the admin to be removed exists in the current admins
+    const currentAdminExists = country.admins.some(
+      (admin) => admin.id === removeAdminId
+    );
+
+    if (!currentAdminExists) {
+      return res.status(400).json({ error: "The specified admin is not currently an admin of this country" });
+    }
+
+    // Remove the admin from the list
+    const updatedCountry = await prisma.country.update({
+      where: { id: parseInt(id) },
+      data: {
+        admins: {
+          disconnect: { id: removeAdminId }, // Remove the specified admin
+        },
+      },
+      include: {
+        admins: true, // Include the updated admins in the response
+      },
+    });
+    const transformedCountry = {
+      id: updatedCountry.id,
+      name: updatedCountry.name,
+      departments: updatedCountry.departments,
+      admins: updatedCountry.admins.map(admin => admin.id),
+    };
+
+    res.json(transformedCountry);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
 // Update a country (Admin Only)
-exports.updateCountry = async (req, res) => {
-  const { id } = req.params;
-  const { name, adminId } = req.body;
-  if (adminId) {
-    const adminUser = await prisma.user.findUnique({
-      where: { id: adminId },
-      select: { role: true },
-    });
+// exports.updateCountry = async (req, res) => {
+//   const { id } = req.params;
+//   const { name, adminId } = req.body;
+//   if (adminId) {
+//     const adminUser = await prisma.user.findUnique({
+//       where: { id: adminId },
+//       select: { role: true },
+//     });
 
-    if (!adminUser || adminUser.role !== "countryAdmin") {
-      return res
-        .status(400)
-        .json({ error: "The provided user is not a country admin" });
-    }
-  }
-  try {
-    const country = await prisma.country.update({
-      where: { id: parseInt(id) },
-      data: {
-        name,
-        admins: adminId ? { connect: { id: adminId } } : undefined,
-      },
-    });
-    res.json(country);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+//     if (!adminUser || adminUser.role !== "countryAdmin") {
+//       return res
+//         .status(400)
+//         .json({ error: "The provided user is not a country admin" });
+//     }
+//   }
+//   try {
+//     const country = await prisma.country.update({
+//       where: { id: parseInt(id) },
+//       data: {
+//         name,
+//         admins: adminId ? { connect: { id: adminId } } : undefined,
+//       },
+//     });
+//     res.json(country);
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
 
 // Delete a country (Admin Only)
 exports.deleteCountry = async (req, res) => {

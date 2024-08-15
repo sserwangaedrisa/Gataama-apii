@@ -39,18 +39,22 @@ exports.getAllCountries = async (req, res) => {
   try {
     const countries = await prisma.country.findMany({
       include: {
-        departments: true,
-        admins: true, // Include admins in the response
+        // departments: true,
+        admins: true, 
       },
     });
 
-    // Transform the data to include only admin IDs
     const transformedCountries = countries.map(country => ({
       id: country.id,
       name: country.name,
       departments: country.departments,
       admins: country.admins.map(admin => admin.id), 
     }));
+    // const response = {
+    //   status: "success",
+    //   message: "Countries featched successfully",
+    //   data: transformedCountries,
+    // };
 
     res.json(transformedCountries);
   } catch (err) {
@@ -65,7 +69,7 @@ exports.getCountryById = async (req, res) => {
     const country = await prisma.country.findUnique({
       where: { id: parseInt(id) },
       include: {
-        departments: true,
+        // departments: true,
         admins: true, // Include admins in the response
       },
     });

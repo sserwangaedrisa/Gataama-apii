@@ -6,13 +6,27 @@ exports.getDepartmentsByCountry = async (req, res) => {
   try {
     const departments = await prisma.department.findMany({
       where: { countryId: parseInt(countryId) },
-     
     });
-    res.json(departments);
+
+    // Transform the array to an object with department IDs as keys
+    const departmentsObject = departments.reduce((acc, department) => {
+      acc[department.id] = {
+        id: department.id,
+        name: department.name,
+        title: department.title,
+        content: department.content,
+        countryId: department.countryId,
+        imageUrl: department.imageUrl,
+      };
+      return acc;
+    }, {});
+
+    res.json(departmentsObject);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 exports.getDepartmentById = async (req, res) => {
   const { countryId, id } = req.params;

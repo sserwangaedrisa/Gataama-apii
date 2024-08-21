@@ -89,7 +89,7 @@ model Comment {
   content   String
   createdAt DateTime  @default(now())
   postId    Int
-  post      Post      @relation(fields: [postId], references: [id])
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
   authorId  Int
   author    User      @relation(fields: [authorId], references: [id])
   parentId  Int?
@@ -119,8 +119,8 @@ model Reaction {
   type      String   // Type of reaction: e.g., 'like', 'love', 'dislike', etc.
   postId    Int
   authorId    Int
-  post      Post     @relation(fields: [postId], references: [id])
-  user      User     @relation(fields: [authorId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 }
 
@@ -167,7 +167,7 @@ model Department {
   content      String?
   countryId  Int
   imageUrl   String?
-  country    Country       @relation(fields: [countryId], references: [id])
+  country    Country       @relation(fields: [countryId], references: [id], onDelete: Cascade)
   // post       DepartmentPost?
 }
 

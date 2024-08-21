@@ -11,7 +11,7 @@ const isAdmin = async (req, res, next) => {
       return res.status(404).send({ message: "User not found." });
     }
 
-    if (user.role === "admin" || user.role === "countryAdmin") {
+    if (user.role === "admin") {
       next();
     } else {
       return res.status(403).send({ message: "Require Admin Role!" });

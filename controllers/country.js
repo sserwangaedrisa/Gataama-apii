@@ -12,7 +12,7 @@ exports.createCountry = async (req, res) => {
         select: { role: true },
       });
 
-      if (!adminUser || adminUser.role !== "countryAdmin") {
+      if (!adminUser || (adminUser.role !== "countryAdmin" && adminUser.role !== "admin")) {
         return res
           .status(400)
           .json({ error: "The provided user is not a country admin" });

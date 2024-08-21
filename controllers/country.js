@@ -119,7 +119,8 @@ exports.updateCountry = async (req, res) => {
         select: { role: true },
       });
 
-      if (!newAdmin || newAdmin.role !== "countryAdmin") {
+
+      if (!newAdmin || newAdmin.role !== "countryAdmin" && newAdmin.role !== "admin") {
         return res.status(400).json({ error: "The provided user is not a country admin" });
       }
 
@@ -143,7 +144,7 @@ exports.updateCountry = async (req, res) => {
         select: { role: true },
       });
 
-      if (!newAdmin || newAdmin.role !== "countryAdmin") {
+      if (!newAdmin || newAdmin.role !== "countryAdmin" && newAdmin.role !== "admin") {
         return res.status(400).json({ error: "The provided new user is not a country admin" });
       }
 

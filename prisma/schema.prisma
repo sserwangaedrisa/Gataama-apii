@@ -165,6 +165,7 @@ model Department {
   name       String
   title        String?
   content      String?
+   published   Boolean    @default(false)
   countryId  Int
   imageUrl   String?
   country    Country       @relation(fields: [countryId], references: [id], onDelete: Cascade)

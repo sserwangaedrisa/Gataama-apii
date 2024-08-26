@@ -180,3 +180,14 @@ model DepartmentPost {
   departmentId Int         @unique
   // department   Department  @relation(fields: [departmentId], references: [id])
 }
+
+model Meeting {
+  id        Int      @id @default(autoincrement())
+  meetingId String   @unique
+  title     String
+  image     String?
+  startTime DateTime
+  endTime   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

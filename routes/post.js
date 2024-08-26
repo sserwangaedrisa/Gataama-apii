@@ -16,8 +16,16 @@ router.post(
 router.get("/search", postController.search);
 router.get('/popular', postController.getPopularPosts);
 router.get("/", postController.getAllPosts);
+router.get("/published", postController.getAllPublishedPosts);
 router.get("/:id", postController.getPostById);
 
+router.put(
+  "/publish/:id",
+  verifyToken,
+  isAdmin,
+  
+  postController.publishPost
+);
 router.put(
   "/:id",
   verifyToken,

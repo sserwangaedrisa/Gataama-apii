@@ -4,20 +4,33 @@ const upload = require("../middleware/image-upload");
 
 exports.createPost = async (req, res) => {
   try {
-    // Extract fields from the request body
     const { title, content, published, categoryIds, isFeatured } = req.body;
     const imageUrl = req.file ? `/uploads/blog/${req.file.filename}` : null;
     const authorId = req.userId; // Extract userId from verified token
 
-    const parsedPublished = published === "true";
     const parsedIsFeatured = isFeatured === "true";
 
+    // Fetch the author's role from the database
+    const author = await prisma.user.findUnique({
+      where: { id: authorId },
+      select: { role: true },
+    });
+
+    if (!author) {
+      return res.status(404).send({ message: "Author not found" });
+    }
+
+    // Check if the role is 'admin' or 'countryAdmin'
+    const isAdmin = author.role === 'admin';
+    const isCountryAdmin = author.role === 'countryAdmin';
+
+    // Default to false for 'countryAdmin'
+    const parsedPublished = isAdmin ? (published === "true") : false;
+
     // Ensure categoryIds is an integer
-    const parsedCategoryId = parseInt(categoryIds, 10); // Convert categoryIds to an integer
+    const parsedCategoryId = parseInt(categoryIds, 10);
 
-    console.log("Generated Image URL:", imageUrl);
-
-    // Create post with parsed values
+    // Create the post
     const post = await prisma.post.create({
       data: {
         title,
@@ -124,6 +137,54 @@ exports.search = async (req, res) => {
 };
 
 exports.getAllPosts = async (req, res) => {
+  try {
+    const posts = await prisma.post.findMany({
+      // where: {
+      //   published: true, // Filter posts where published is true
+      // },
+      include: {
+        author: {
+          select: {
+            id: true,
+            fullNames: true,
+            email: true,
+          },
+        },
+        categories: true,
+        comments: {
+          include: {
+            author: {
+              select: {
+                id: true,
+                fullNames: true,
+                email: true,
+              },
+            },
+            replies: {
+              include: {
+                author: {
+                  select: {
+                    id: true,
+                    fullNames: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    res.json(posts);
+  } catch (error) {
+    res.status(500).send({ message: error.message });
+  } finally {
+    await prisma.$disconnect(); // Disconnect Prisma client
+  }
+};
+
+exports.getAllPublishedPosts = async (req, res) => {
   try {
     const posts = await prisma.post.findMany({
       where: {
@@ -263,6 +324,40 @@ exports.getPopularPosts = async (req, res) => {
   } catch (error) {
     res.status(500).send({ message: error.message });
   }
+};
+
+
+exports.publishPost = async (req, res) => {
+
+
+    const { id } = req.params;
+    const { published } = req.body;
+
+
+    try {
+      const post = await prisma.post.update({
+        where: {
+          id: parseInt(id),
+          
+        },
+        data: {
+           published : published,
+        },
+      });
+  
+      if (post.count === 0) {
+        return res
+          .status(404)
+          .json({
+            error:
+              "Blog not found",
+          });
+      }
+  
+      res.json({ message: "Blog published successfully" });
+    } catch (err) {
+      res.status(500).json({ error: err });
+    }
 };
 
 

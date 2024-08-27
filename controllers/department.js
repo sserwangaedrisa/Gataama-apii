@@ -20,7 +20,7 @@ exports.getDepartmentsByCountry = async (req, res) => {
         content: department.content,
         countryId: department.countryId,
         imageUrl: department.imageUrl,
-        pulished : department.published,
+        published : department.published,
       };
       return acc;
     }, {});

@@ -3,11 +3,13 @@ const router = express.Router();
 const countryController = require("../controllers/country");
 const verifyToken = require("../middleware/auth");
 const { isAdmin } = require("../middleware/role");
+const upload = require("../middleware/image-upload");
 
-router.post("/", verifyToken, isAdmin, countryController.createCountry);
+
+router.post("/", verifyToken, isAdmin,   upload.single("image"), countryController.createCountry);
 router.get("/", countryController.getAllCountries);
 router.get("/:id", countryController.getCountryById);
-router.put("/:id", verifyToken, isAdmin, countryController.updateCountry);
+router.put("/:id", verifyToken, isAdmin,   upload.single("image"), countryController.updateCountry);
 router.delete("/remove-admin/:id", verifyToken, isAdmin, countryController.removeCountryAdmin);
 router.delete("/:id", verifyToken, isAdmin, countryController.deleteCountry);
 

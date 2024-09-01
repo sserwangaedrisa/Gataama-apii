@@ -3,7 +3,10 @@ const prisma = new PrismaClient();
 
 // Create a new country (Admin Only)
 exports.createCountry = async (req, res) => {
-  const { name, adminId } = req.body;
+  const { name, adminId, description } = req.body;
+  
+  const image = req.file ? `/uploads/blog/${req.file.filename}` : null;
+
   try {
     // Check if the provided adminId is for a user with the "countryAdmin" role
     if (adminId) {
@@ -23,6 +26,8 @@ exports.createCountry = async (req, res) => {
     const country = await prisma.country.create({
       data: {
         name,
+        image,
+        description,
         admins: adminId ? { connect: { id: adminId } } : undefined,
       },
     });
@@ -92,7 +97,9 @@ exports.getCountryById = async (req, res) => {
 
 exports.updateCountry = async (req, res) => {
   const { id } = req.params;
-  const { name, currentAdminId, newAdminId, addAdminId } = req.body;
+  const { name, currentAdminId, newAdminId, addAdminId, description } = req.body;
+  const image = req.file ? `/uploads/blog/${req.file.filename}` : null;
+
 
   try {
     // Fetch the current country details, including admins
@@ -110,6 +117,8 @@ exports.updateCountry = async (req, res) => {
     // Update the country name if provided
     if (name) {
       updatedData.name = name;
+      updatedData.description = description;
+      updatedData.image = image;
     }
 
     // Add a new admin to the country if `addAdminId` is provided

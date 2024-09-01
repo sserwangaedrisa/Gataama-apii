@@ -152,7 +152,8 @@ model User {
 model Country {
   id          Int          @id @default(autoincrement())
   name        String       @unique
-  // A country can have multiple admins
+  image       String?
+  description String?
   admins      User[]       @relation("CountryAdmins")
   departments Department[]
   

@@ -49,9 +49,13 @@ exports.getAllCountries = async (req, res) => {
       },
     });
 
+    console.log(countries);
+
     const transformedCountries = countries.map(country => ({
       id: country.id,
       name: country.name,
+      image: country.image,
+      description: country.description,
       departments: country.departments,
       admins: country.admins.map(admin => admin.id), 
     }));
@@ -85,6 +89,8 @@ exports.getCountryById = async (req, res) => {
     const transformedCountry = {
       id: country.id,
       name: country.name,
+      image: country.image,
+      description: country.description,
       departments: country.departments,
       admins: country.admins.map(admin => admin.id),
     };

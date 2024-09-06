@@ -20,12 +20,14 @@ const countryRoutes = require("./routes/country");
 const departmentRoutes = require("./routes/department");
 const departmentPostRoutes = require("./routes/departmentPost");
 const meetingRoutes = require("./routes/meeting");
+const jobRoutes = require("./routes/job");
+
 
 const app = express();
 
 // Middleware setup
 const corsOptions = {
-  origin: "*", // Consider specifying allowed origins for better security
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
@@ -64,6 +66,7 @@ app.use("/countries", countryRoutes);
 app.use("/department", departmentRoutes);
 app.use("/department-post", departmentPostRoutes);
 app.use("/meeting", meetingRoutes );
+app.use("/job", jobRoutes)
 
 // Handle errors
 app.use((req, res, next) => {

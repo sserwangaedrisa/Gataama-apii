@@ -192,3 +192,11 @@ model Meeting {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Job {
+ id           Int      @id @default(autoincrement())
+ title        String
+ subTitle     String
+ description  String
+ location     String?
+}

@@ -199,4 +199,8 @@ model Job {
  subTitle     String
  description  String
  location     String?
+ deadline     DateTime?
+ status       Boolean  @default(true)
+ createdAt    DateTime  @default(now())
+
 }

@@ -2,7 +2,7 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 exports.createJob = async (req, res) => {
-  const { title,  subTitle, description, location } = req.body;
+  const { title,  subTitle, description, location, deadline, status } = req.body;
 
 
   try {
@@ -11,7 +11,9 @@ exports.createJob = async (req, res) => {
         title, 
         subTitle, 
         description, 
-       location
+       location,
+       deadline,
+        status,
       },
     });
     res.status(201).json({ message: 'job created successfully', job });
@@ -48,7 +50,7 @@ exports.getJobById = async (req, res) => {
 
 exports.updateJob = async (req, res) => {
   const { id } = req.params;
-  const { title,  subTitle, description, location } = req.body;
+  const { title,  subTitle, description, location, deadline, status } = req.body;
 
 
   try {
@@ -59,6 +61,8 @@ exports.updateJob = async (req, res) => {
         subTitle, 
         description,
         location,
+        deadline,
+        status
       },
     });
     res.status(200).json({ message: 'job updated successfully', job });

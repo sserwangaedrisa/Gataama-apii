@@ -104,6 +104,8 @@ exports.updateCountry = async (req, res) => {
   const { id } = req.params;
   const { name, currentAdminId, newAdminId, addAdminId, description } = req.body;
   const image = req.file ? `/uploads/blog/${req.file.filename}` : null;
+  console.log(image);
+  
 
 
   try {
@@ -122,7 +124,11 @@ exports.updateCountry = async (req, res) => {
     // Update the country name if provided
     if (name) {
       updatedData.name = name;
+    }
+    if (description) {
       updatedData.description = description;
+    }
+    if (image) {
       updatedData.image = image;
     }
 
@@ -179,6 +185,8 @@ exports.updateCountry = async (req, res) => {
 
     const transformedCountry = {
       id: updatedCountry.id,
+      image : updatedCountry.image,
+      description : updatedCountry.description,
       name: updatedCountry.name,
       departments: updatedCountry.departments,
       admins: updatedCountry.admins.map(admin => admin.id),

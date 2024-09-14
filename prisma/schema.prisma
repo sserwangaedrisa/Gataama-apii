@@ -157,6 +157,7 @@ model Country {
   admins      User[]       @relation("CountryAdmins")
   departments Department[]
   teamMembers TeamMember[]
+  countryContacts CountryContact[]
   
   @@map("countries")
   User User[]
@@ -176,6 +177,18 @@ model TeamMember {
   countryId   Int
   
   @@map("team_members")
+}
+
+model CountryContact {
+  id          Int      @id @default(autoincrement())
+  location   String
+  phone      String
+  email      String
+  postalCode String
+  country     Country   @relation(fields: [countryId], references: [id])
+  countryId   Int
+  
+  @@map("country_contacts")
 }
 
 model Department {

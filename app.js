@@ -22,6 +22,8 @@ const departmentPostRoutes = require("./routes/departmentPost");
 const meetingRoutes = require("./routes/meeting");
 const jobRoutes = require("./routes/job");
 const teamRoutes = require("./routes/team");
+const countryContactRoutes = require("./routes/countryContact");
+
 
 
 const app = express();
@@ -69,6 +71,7 @@ app.use("/department-post", departmentPostRoutes);
 app.use("/meeting", meetingRoutes );
 app.use("/job", jobRoutes)
 app.use("/team", teamRoutes)
+app.use("/country-contact", countryContactRoutes);
 
 // Handle errors
 app.use((req, res, next) => {

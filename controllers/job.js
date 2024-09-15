@@ -22,14 +22,37 @@ exports.createJob = async (req, res) => {
   }
 };
 
+// controllers/job.js
+
 exports.getJobs = async (req, res) => {
   try {
-    const jobs = await prisma.job.findMany();
+    // Extract countryId from query parameters
+    const { countryId } = req.query;
+
+    // Create query object for filtering
+    const query = {};
+
+    // Add location filter if countryId is provided
+    if (countryId) {
+      query.location = parseInt(countryId, 10);
+    }
+
+    // Fetch jobs from the database with optional filtering
+    const jobs = await prisma.job.findMany({
+      where: query
+    });
+
     res.status(200).json(jobs);
   } catch (error) {
+    console.error('Error fetching jobs:', error);
     res.status(500).json({ error: 'Failed to retrieve jobs' });
   }
 };
+
+// Other controller methods...
+
+
+
 
 exports.getJobById = async (req, res) => {
   const { id } = req.params;

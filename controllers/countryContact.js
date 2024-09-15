@@ -129,7 +129,6 @@ exports.deleteCountryContact = async (req, res) => {
             return res.status(404).json({ message: "No contact found for this country." });
         }
 
-        // Delete the contact
         const deletedCountryContact = await prisma.countryContact.delete({
             where: { id: existingContact.id },
         });

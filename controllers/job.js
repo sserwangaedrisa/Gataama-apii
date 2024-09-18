@@ -22,6 +22,32 @@ exports.createJob = async (req, res) => {
   }
 };
 
+
+
+
+
+exports.createJobForMain = async (req, res) => {
+  const { title,  subTitle, description, deadline, status } = req.body;
+
+
+  try {
+    const job = await prisma.job.create({
+      data: { 
+        title, 
+        subTitle, 
+        isMain : true,
+        description, 
+       
+       deadline,
+        status,
+      },
+    });
+    res.status(201).json({ message: 'job created successfully', job });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create job ', e : error.message });
+  }
+};
+
 // controllers/job.js
 
 exports.getJobs = async (req, res) => {
@@ -49,6 +75,25 @@ exports.getJobs = async (req, res) => {
   }
 };
 
+
+exports.getJobsMain = async (req, res) => {
+  try {
+    // Create query object to filter for isMain = true
+    const query = {
+      isMain: true
+    };
+
+    // Fetch jobs from the database with the specified filter
+    const jobs = await prisma.job.findMany({
+      where: query
+    });
+
+    res.status(200).json(jobs);
+  } catch (error) {
+    console.error('Error fetching jobs:', error);
+    res.status(500).json({ error: 'Failed to retrieve jobs' });
+  }
+};
 // Other controller methods...
 
 
@@ -84,6 +129,30 @@ exports.updateJob = async (req, res) => {
         subTitle, 
         description,
         location,
+        deadline,
+        status
+      },
+    });
+    res.status(200).json({ message: 'job updated successfully', job });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update job' });
+  }
+};
+
+
+exports.updateMainJob = async (req, res) => {
+  const { id } = req.params;
+  const { title,  subTitle, description, deadline, status } = req.body;
+
+
+  try {
+    const job = await prisma.job.update({
+      where: { id: parseInt(id) },
+      data: { 
+        title, 
+        subTitle, 
+        description,
+        isMain : true,
         deadline,
         status
       },

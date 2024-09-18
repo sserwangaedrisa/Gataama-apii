@@ -5,20 +5,34 @@ const verifyToken = require("../middleware/auth");
 const { isCountryAdmin, isAdmin } = require("../middleware/role");
 router.get(
   "/", jobController.getJobs)
+  router.get(
+    "/main", jobController.getJobsMain)
 router.get("/:id", jobController.getJobById);
 
 router.post(
   "/",
   verifyToken,
-  isAdmin,
+  isCountryAdmin,
   jobController.createJob
+);
+router.post(
+  "/main",
+  verifyToken,
+  isAdmin,
+  jobController.createJobForMain
 );
 
 router.put(
   "/:id",
   verifyToken,
-  isAdmin,
+  isCountryAdmin,
   jobController.updateJob
+);
+router.put(
+  "/main/:id",
+  verifyToken,
+  isAdmin,
+  jobController.updateMainJob
 );
 
 router.delete(

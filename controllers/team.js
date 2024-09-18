@@ -50,6 +50,53 @@ exports.addTeamMember = async (req, res) => {
     }
   };
 
+  exports.getTeamsMain = async (req, res) => {
+    try {
+      // Create query object to filter for isMain = true
+      const query = {
+        isMain: true
+      };
+  
+      // Fetch jobs from the database with the specified filter
+      const teams = await prisma.teamMember.findMany({
+        where: query
+      });
+  
+      res.status(200).json(teams);
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+      res.status(500).json({ error: 'Failed to retrieve teams' });
+    }
+  };
+
+  exports.addTeamMemberForMain = async (req, res) => {
+    const { name, position, linkedin, facebook, twitter, youtube, description } = req.body;
+    const profilePicture = req.file ? `/uploads/blog/${req.file.filename}` : null;
+
+  
+    try {
+     
+      const teamMember = await prisma.teamMember.create({
+        data: {
+          name,
+          profilePicture,
+          position,
+          linkedin,
+          facebook,
+          twitter,
+          youtube,
+          description,
+          isMain : true
+        },
+      });
+  
+      res.status(201).json(teamMember);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Error adding team member' });
+    }
+  };
+
 // Get all team members for a specific country
 exports.getTeamMembersByCountry = async (req, res) => {
   const { countryId } = req.params;
@@ -102,6 +149,37 @@ exports.updateTeamMember = async (req, res) => {
           facebook,
           twitter,
           youtube,
+          description,
+        },
+      });
+  
+      res.status(200).json(updatedTeamMember);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Error updating team member' });
+    }
+  };
+
+
+  exports.updateTeamMemberForMain = async (req, res) => {
+    const { teamMemberId } = req.params;
+    const { name, position, linkedin, facebook, twitter, youtube, description } = req.body;
+    const profilePicture = req.file ? `/uploads/blog/${req.file.filename}` : null;
+
+  
+    try {
+    
+      const updatedTeamMember = await prisma.teamMember.update({
+        where: { id: parseInt(teamMemberId) },
+        data: {
+          name,
+          profilePicture,
+          position,
+          linkedin,
+          facebook,
+          twitter,
+          youtube,
+          isMain : true,
           description,
         },
       });

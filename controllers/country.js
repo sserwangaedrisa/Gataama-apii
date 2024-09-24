@@ -101,7 +101,7 @@ exports.getCountryById = async (req, res) => {
 };
 
 exports.updateCountry = async (req, res) => {
-  const { id } = req.params;
+  const { countryId } = req.params;
   const { name, currentAdminId, newAdminId, addAdminId, description } = req.body;
   const image = req.file ? `/uploads/blog/${req.file.filename}` : null;
   console.log(image);
@@ -111,7 +111,7 @@ exports.updateCountry = async (req, res) => {
   try {
     // Fetch the current country details, including admins
     const country = await prisma.country.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(countryId) },
       include: { admins: true },
     });
 
@@ -176,7 +176,7 @@ exports.updateCountry = async (req, res) => {
 
     // Update the country with the accumulated updates
     const updatedCountry = await prisma.country.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(countryId) },
       data: updatedData,
       include: {
         admins: true, // Include the updated admins in the response

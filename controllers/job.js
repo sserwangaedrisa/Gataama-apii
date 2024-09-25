@@ -137,44 +137,59 @@ exports.getJobById = async (req, res) => {
 
 exports.updateJob = async (req, res) => {
   const { id } = req.params;
-  const { title,  subTitle, description, location, deadline, status } = req.body;
+  const { title, subTitle, description, deadline, status } = req.body;
 
   const userId = req.userId;
 
   try {
+      // Fetch the job by its ID
+      const job = await prisma.job.findUnique({
+          where: { id: parseInt(id, 10) },
+      });
 
-    
-    const country = await prisma.country.findUnique({
-      where: { id: parseInt(location) },
-      include: { admins: true }, 
-    });
+      if (!job) {
+          return res.status(404).json({ message: "Job not found" });
+      }
 
-    if (!country) {
-      return res.status(404).json({ message: "Country not found" });
-    }
+      // Get the location ID from the job
+      const locationId = job.location;
 
-    // Check if the user making the request is one of the country admins
-    const isAdmin = country.admins.some(admin => admin.id === userId);
+      // Find the country to check if the user is an admin
+      const country = await prisma.country.findUnique({
+          where: { id: locationId },
+          include: { admins: true },
+      });
 
-    if (!isAdmin) {
-      return res.status(403).json({ message: "Access denied. You are not an admin for this country." });
-    }
-    const job = await prisma.job.update({
-      where: { id: parseInt(id) },
-      data: { 
-        title, 
-        subTitle, 
-        description,
-        location,
-        deadline,
-        status
-      },
-    });
-    res.status(200).json({ message: 'job updated successfully', job });
+      if (!country) {
+          return res.status(404).json({ message: "Country not found" });
+      }
+
+      // Check if the user making the request is one of the country admins
+      const isAdmin = country.admins.some(admin => admin.id === userId);
+
+      if (!isAdmin) {
+          return res.status(403).json({ message: "Access denied. You are not an admin for this country." });
+      }
+
+      // Now update the job with the new data
+      const updatedJob = await prisma.job.update({
+          where: { id: parseInt(id, 10) },
+          data: { 
+              title, 
+              subTitle, 
+              description,
+              deadline,
+              status,
+          },
+      });
+
+      res.status(200).json({ message: 'Job updated successfully', job: updatedJob });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update job', error : error });
+      console.error(error);
+      res.status(500).json({ error: 'Failed to update job', error: error.message });
   }
 };
+
 
 
 exports.updateMainJob = async (req, res) => {

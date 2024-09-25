@@ -146,7 +146,7 @@ exports.updateJob = async (req, res) => {
     
     const country = await prisma.country.findUnique({
       where: { id: parseInt(location) },
-      include: { admins: true }, // Include the admins
+      include: { admins: true }, 
     });
 
     if (!country) {
@@ -172,7 +172,7 @@ exports.updateJob = async (req, res) => {
     });
     res.status(200).json({ message: 'job updated successfully', job });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update job' });
+    res.status(500).json({ error: 'Failed to update job', error : error });
   }
 };
 

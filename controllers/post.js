@@ -363,90 +363,93 @@ exports.publishPost = async (req, res) => {
 
 
 exports.updatePost = async (req, res) => {
-  upload(req, res, async (err) => {
-    if (err) {
-      return res.status(400).send({ message: err });
-    }
+  const { id } = req.params;
+  const { title, content, published, categoryIds, isFeatured } = req.body;
+  const imageUrl = req.file ? `/uploads/blog/${req.file.filename}` : null;
 
-    const { id } = req.params;
-    const { title, content, published, categoryIds, isFeatured } = req.body;
-    const imageUrl = req.file ? `/uploads/blog/${req.file.filename}` : null;
-    const authorId = req.userId; // Extract userId from verified token
+  const authorId = req.userId; // Extract userId from verified token
 
-    const parsedPublished = published === "true";
-    const parsedIsFeatured = isFeatured === "true";
+  try {
+      const author = await prisma.user.findUnique({
+          where: { id: authorId },
+          select: { role: true },
+      });
 
-    // Ensure categoryIds is an integer
-    const parsedCategoryId = parseInt(categoryIds, 10); // Convert categoryIds to an integer
-
-    const userRole = req.userRole; //
-
-    try {
-      // Check if user is super admin or country admin
-      if (userRole === "admin") {
-        // Super admin can update any post
-        const post = await prisma.post.update({
-          where: { id: parseInt(id, 10) },
-          data: {
-            title,
-            content,
-            published: parsedPublished,
-            imageUrl,
-            isFeatured: parsedIsFeatured,
-            // author: { connect: { id: authorId } },
-            categories: {
-              connect: { id: parsedCategoryId }, // Connect single category ID
-            },
-          },
-        });
-        res.json(post);
-      } else if (userRole === "countryAdmin") {
-        // Country admin can update only their own posts
-        const post = await prisma.post.findUnique({
-          where: { id: parseInt(id, 10) },
-        });
-
-        if (!post) {
-          return res.status(404).send({ message: "Post not found" });
-        }
-
-        // Check if the post belongs to the country admin
-        if (post.authorId !== userId) {
-          return res.status(403).send({
-            message: "Unauthorized: You can only update your own posts",
-          });
-        }
-
-        const updatedPost = await prisma.post.update({
-          where: { id: parseInt(id, 10) },
-          data: {
-            title,
-            content,
-            published: parsedPublished,
-            imageUrl,
-            isFeatured: parsedIsFeatured,
-            author: { connect: { id: authorId } },
-            categories: {
-              connect: { id: parsedCategoryId }, // Connect single category ID
-            },
-          },
-        });
-
-        res.json(updatedPost);
-      } else {
-        // Unauthorized role
-        return res
-          .status(403)
-          .send({ message: "Unauthorized: Insufficient privileges" });
+      if (!author) {
+          return res.status(404).send({ message: "Author not found" });
       }
-    } catch (error) {
+
+      const userRole = author.role;
+
+      // Construct the update data object conditionally
+      const updateData = {};
+
+      if (title) {
+          updateData.title = title;
+      }
+
+      if (content !== undefined) {
+          updateData.content = content; // Include content only if defined
+      }
+
+      if (published !== undefined) {
+          updateData.published = published === "true"; // Ensure this is a boolean
+      }
+
+      if (imageUrl) {
+          updateData.imageUrl = imageUrl;
+      }
+
+      if (isFeatured !== undefined) {
+          updateData.isFeatured = isFeatured === "true";
+      }
+
+      // Only include categories if categoryIds are provided
+      if (categoryIds) {
+          updateData.categories = {
+              connect: Array.isArray(categoryIds)
+                  ? categoryIds.map(catId => ({ id: parseInt(catId, 10) }))
+                  : [{ id: parseInt(categoryIds, 10) }],
+          };
+      }
+
+      if (userRole === "admin") {
+          const post = await prisma.post.update({
+              where: { id: parseInt(id, 10) },
+              data: updateData,
+          });
+          return res.json(post);
+      } else if (userRole === "countryAdmin") {
+          const post = await prisma.post.findUnique({
+              where: { id: parseInt(id, 10) },
+          });
+
+          if (!post) {
+              return res.status(404).send({ message: "Post not found" });
+          }
+
+          if (post.authorId !== authorId) {
+              return res.status(403).send({
+                  message: "Unauthorized: You can only update your own posts",
+              });
+          }
+
+          const updatedPost = await prisma.post.update({
+              where: { id: parseInt(id, 10) },
+              data: updateData,
+          });
+          return res.json(updatedPost);
+      } else {
+          return res.status(403).send({ message: "Unauthorized: Insufficient privileges" });
+      }
+  } catch (error) {
       console.error("Error updating post:", error);
       res.status(500).send({ message: "Error updating post" });
-    } finally {
+  } finally {
       await prisma.$disconnect();
-    }
-  });
+  }
 };
+
 
 exports.deletePost = async (req, res) => {
   try {

@@ -95,6 +95,34 @@ exports.getJobs = async (req, res) => {
 };
 
 
+exports.getPublishedJobs = async (req, res) => {
+  try {
+    // Extract countryId from query parameters
+    const { countryId } = req.query;
+
+    // Create query object for filtering
+    const query = {
+      status: true, // Filter for jobs where status is true
+    };
+
+    // Add location filter if countryId is provided
+    if (countryId) {
+      query.location = parseInt(countryId, 10);
+    }
+
+    // Fetch jobs from the database with optional filtering
+    const jobs = await prisma.job.findMany({
+      where: query,
+    });
+
+    res.status(200).json(jobs);
+  } catch (error) {
+    console.error('Error fetching jobs:', error);
+    res.status(500).json({ error: 'Failed to retrieve jobs' });
+  }
+};
+
+
 exports.getJobsMain = async (req, res) => {
   try {
     // Create query object to filter for isMain = true

@@ -6,6 +6,8 @@ const { isCountryAdmin, isAdmin } = require("../middleware/role");
 router.get(
   "/", jobController.getJobs)
   router.get(
+    "/published/", jobController.getPublishedJobs)
+  router.get(
     "/main", jobController.getJobsMain)
 router.get("/:id", jobController.getJobById);
 

@@ -33,7 +33,7 @@ const isCountryAdmin = async (req, res, next) => {
 
   try {
     const country = await prisma.country.findUnique({
-      where: { id: parsedCountryId }, // Ensure parsedCountryId is passed correctly
+      where: { id: parsedCountryId }, 
       include: { admins: true },
     });
 

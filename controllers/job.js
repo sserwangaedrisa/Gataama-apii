@@ -5,7 +5,26 @@ exports.createJob = async (req, res) => {
   const { title,  subTitle, description, location, deadline, status } = req.body;
 
 
+  const userId = req.userId;
+
   try {
+
+    const country = await prisma.country.findUnique({
+      where: { id: parseInt(location) },
+      include: { admins: true }, // Include the admins
+    });
+
+    if (!country) {
+      return res.status(404).json({ message: "Country not found" });
+    }
+
+    // Check if the user making the request is one of the country admins
+    const isAdmin = country.admins.some(admin => admin.id === userId);
+
+    if (!isAdmin) {
+      return res.status(403).json({ message: "Access denied. You are not an admin for this country." });
+    }
+
     const job = await prisma.job.create({
       data: { 
         title, 
@@ -120,8 +139,26 @@ exports.updateJob = async (req, res) => {
   const { id } = req.params;
   const { title,  subTitle, description, location, deadline, status } = req.body;
 
+  const userId = req.userId;
 
   try {
+
+    
+    const country = await prisma.country.findUnique({
+      where: { id: parseInt(location) },
+      include: { admins: true }, // Include the admins
+    });
+
+    if (!country) {
+      return res.status(404).json({ message: "Country not found" });
+    }
+
+    // Check if the user making the request is one of the country admins
+    const isAdmin = country.admins.some(admin => admin.id === userId);
+
+    if (!isAdmin) {
+      return res.status(403).json({ message: "Access denied. You are not an admin for this country." });
+    }
     const job = await prisma.job.update({
       where: { id: parseInt(id) },
       data: { 
@@ -167,6 +204,7 @@ exports.deleteJob = async (req, res) => {
   const { id } = req.params;
 
   try {
+    
     await prisma.job.delete({
       where: { id: parseInt(id) },
     });

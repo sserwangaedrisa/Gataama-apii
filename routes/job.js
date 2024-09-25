@@ -12,7 +12,7 @@ router.get("/:id", jobController.getJobById);
 router.post(
   "/",
   verifyToken,
-  isCountryAdmin,
+ 
   jobController.createJob
 );
 router.post(
@@ -25,7 +25,6 @@ router.post(
 router.put(
   "/:id",
   verifyToken,
-  isCountryAdmin,
   jobController.updateJob
 );
 router.put(

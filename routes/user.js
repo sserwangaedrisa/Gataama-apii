@@ -9,6 +9,8 @@ const { isAdmin } = require("../middleware/role");
 
 router.post(
   "/register",
+  verifyToken,
+  isAdmin,
   validation.registerUserPolicy,
   UserController.register
 );

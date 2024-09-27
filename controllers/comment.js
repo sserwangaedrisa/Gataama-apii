@@ -12,30 +12,85 @@ exports.createComment = async (req, res) => {
         authorId,
         parentId, // This can be null for top-level comments
       },
-    });
-
-    res.status(201).json(comment);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-exports.getCommentsByPostId = async (req, res) => {
-  try {
-    const { postId } = req.params;
-
-    const comments = await prisma.comment.findMany({
-      where: { postId, parentId: null }, // Top-level comments only
       include: {
-        replies: true, // Include replies to the comments
+        author: {
+          select: {
+            id: true,
+            fullNames: true,
+            email: true,
+          },
+        },
+        replies: {
+          include: {
+            author: {
+              select: {
+                id: true,
+                fullNames: true,
+                email: true,
+              },
+            },
+          },
+        },
       },
     });
 
-    res.status(200).json(comments);
+    
+    res.status(201).json(comment);
   } catch (error) {
+    console.error("Error creating comment:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
+
+exports.getCommentsByPostId = async (req, res) => {
+  console.log("getCommentsByPostId");
+  
+  try {
+    const { postId } = req.params;
+    console.log("Post ID:", postId); // Log the postId
+
+    // Convert postId to an integer
+    const postIdInt = parseInt(postId, 10);
+    if (isNaN(postIdInt)) {
+      return res.status(400).json({ message: "Invalid post ID." });
+    }
+
+    const comments = await prisma.comment.findMany({
+      where: {
+        postId: postIdInt, // Use the integer value here
+        parentId: null, // Top-level comments only
+      },
+      
+      include: {
+        author: {
+          select: {
+            id: true,
+            fullNames: true,
+            email: true,
+          },
+        },
+        replies: {
+          include: {
+            author: {
+              select: {
+                id: true,
+                fullNames: true,
+                email: true,
+              },
+            },
+          },
+      }},
+    });
+
+    
+    res.status(200).json(comments);
+  } catch (error) {
+    console.error("Error fetching comments:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
 exports.getAllComments = async (req, res) => {
   try {

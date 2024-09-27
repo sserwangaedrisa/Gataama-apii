@@ -23,11 +23,11 @@ router.patch(
   UserController.forgotPassword
 );
 
-router.patch(
+router.put(
   "/profile/:id",
-  checkAuth,
-  validation.userprofilePolicy,
-  UserController.fillProfile
+  verifyToken,
+  isAdmin,
+  UserController.updateUser
 );
 
 router.delete("/:id",verifyToken, isAdmin, UserController.deleteUser);

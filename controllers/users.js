@@ -9,7 +9,6 @@ const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 
 exports.register = async (req, res) => {
-  // const pwd = `${Math.floor(1000 + Math.random() * 9000)}rfh`;
   try {
     if (req.body.password == "") {
       return res.status(403).send({
@@ -36,71 +35,6 @@ exports.register = async (req, res) => {
       },
     });
 
-    //   const transporter = nodemailer.createTransport({
-    //     host: "smtp.ionos.com",
-    //     port: 587,
-    //     auth: {
-    //       user: process.env.SENDER_EMAIL,
-    //       pass: process.env.SENDER_EMAIL_PASSWORD,
-    //     },
-    //   });
-
-    //   let msgs = `<p>Hello <b>${user.fullNames}</b>,</p>
-    //       <p>An admin account has been successfully created on your behalf for the website <a href="https://gataama.com">https://gataama.com</a></p>
-    //       <p>Find below your login credentials</p>
-    //       <p>Email : ${user.email}</p>
-    //       <p>Password : ${pwd}</p>
-    //       <p><a href="https://admin.gataama.com">Click here to login to your account</a></p>`;
-
-    //   const message = {
-    //     from: `"Gataama" <${process.env.SENDER_EMAIL}>`,
-    //     to: user.email,
-    //     subject: "Welcome aboard - Gataama",
-    //     html: `<!DOCTYPE html>
-    //         <html lang="en">
-    //           <head>
-    //             <meta charset="UTF-8">
-    //             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    //             <title>Welcome Tickets2Go</title>
-    //             <link rel="preconnect" href="https://fonts.googleapis.com">
-
-    //             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-    //             <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;400;700&display=swap" rel="stylesheet">
-    //             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.2/css/bootstrap.min.css"
-    //               integrity="sha512-CpIKUSyh9QX2+zSdfGP+eWLx23C8Dj9/XmHjZY2uDtfkdLGo0uY12jgcnkX9vXOgYajEKb/jiw67EYm+kBf+6g=="
-    //               crossorigin="anonymous" referrerpolicy="no-referrer" />
-    //             <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet" />
-    //           </head>
-    //           <body>
-    //             <div class="container">
-    //               <div class="row">
-    //                 <div class="col">
-    //                   ${msgs}
-    //                   <p>Best,</p>
-    //                   <p>The Gataama Team.</p>
-    //                 </div>
-    //               </div>
-    //             </div>
-    //             <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.2/js/bootstrap.min.js"
-    //               integrity="sha512-5BqtYqlWfJemW5+v+TZUs22uigI8tXeVah5S/1Z6qBLVO7gakAOtkOzUtgq6dsIo5c0NJdmGPs0H9I+2OHUHVQ=="
-    //               crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    //             <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-    //           </body>
-    //         </html>
-    //         `,
-    //   };
-
-    //   transporter.sendMail(message, (err3, info) => {
-    //     if (err3) {
-    //       return res.status(500).send({
-    //         error: err3,
-    //       });
-    //     }
-    //     return res.status(201).send({
-    //       message: `Created account for ${user.fullNames} successfully`,
-    //     });
-    //   });
     return res.status(201).send({
       message: `Created account for ${user.fullNames} successfully`,
     });
@@ -110,6 +44,8 @@ exports.register = async (req, res) => {
     });
   }
 };
+
+
 
 exports.login = async (req, res) => {
   try {
@@ -288,71 +224,84 @@ exports.forgotPassword = async (req, res) => {
     });
   }
 };
-exports.fillProfile = async (req, res) => {
-  // this controller updates a user account info
-  // check if password exists
-  if (req.body.password) {
-    const hash = await bcrypt.hash(req.body.password, 10);
-    const other = {
-      password: hash,
-    };
-    Object.assign(req.body, other);
-  }
-  const entries = Object.keys(req.body);
-  const updates = {
-    updatedBy: req.userData.id,
-  };
-  for (let i = 0; i < entries.length; i++) {
-    updates[entries[i]] = Object.values(req.body)[i];
-  }
-  // post to data
-  await db.getConnection((err, connection) => {
-    if (err) {
-      console.log("err", err);
-      return res.status(500).send({
-        message: process.env.ERROR_MESSAGE,
+
+
+exports.updateUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // Find the user by ID
+    const existingUser = await prisma.user.findUnique({
+      where: { id: parseInt(userId) },
+    });
+
+    if (!existingUser) {
+      return res.status(404).send({
+        message: "User not found",
       });
     }
-    const sql = `UPDATE users SET ? WHERE id = ${req.params.id}`;
-    connection.query(sql, updates, (err1, result) => {
-      connection.release();
-      if (err1) {
-        return res.status(500).send({
-          message: process.env.ERROR_MESSAGE,
-        });
-      }
-      // return result to user
-      res.status(200).send({
-        message: "updated user details successfully",
-      });
+
+    // Update user details
+    const updatedData = {
+      fullNames: req.body.fullNames || existingUser.fullNames,
+      email: req.body.email || existingUser.email,
+      role: req.body.role || existingUser.role,
+    };
+
+    // If a new password is provided, hash it
+    if (req.body.password) {
+      const hash = await bcrypt.hash(req.body.password, 10);
+      updatedData.password = hash;
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: parseInt(userId) },
+      data: updatedData,
     });
-  });
+
+    return res.status(200).send({
+      message: `Updated user ${updatedUser.fullNames} successfully`,
+    });
+  } catch (error) {
+    return res.status(400).send({
+      message: error.message,
+    });
+  }
 };
 
-exports.deleteUser = async (req, res, next) => {
-  // delete all user data
-  // suggestion to use soft deletes instead <REFACTOR THIS CODE>
-  await db.getConnection((err, connection) => {
-    if (err) {
-      return res.status(500).send(errors);
-    }
-    const sql = `DELETE from users WHERE id = ${req.params.id}`;
-    connection.query(sql, (err, result) => {
-      connection.release();
-      if (err) {
-        return res.status(500).send({
-          success: false,
-          message: err,
-        });
-      }
-      // return result to user
-      res.status(200).send({
-        success: true,
-        message: "user deleted successfully",
-      });
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // Check if the user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { id: parseInt(userId) },
     });
-  });
+
+    if (!existingUser) {
+      return res.status(404).send({
+        message: "User not found",
+      });
+    }
+
+    // Delete the user
+    await prisma.user.delete({
+      where: { id: parseInt(userId) },
+    });
+
+    return res.status(200).send({
+      message: `Deleted user ${existingUser.fullNames} successfully`,
+    });
+  } catch (error) {
+    return res.status(400).send({
+      message: error.message,
+    });
+  }
 };
+
+
+
 
 const generateToken = (user) => {
   return jwt.sign(

@@ -16,6 +16,9 @@ router.get('/:countryId', teamsController.getTeamMembersByCountry);
 
 router.put('/main/:teamMemberId', verifyToken, isAdmin, upload.single("profilePicture"), teamsController.updateTeamMemberForMain);
 
+router.delete('/main/:teamMemberId', verifyToken, isAdmin,teamsController.deleteMainTeamMember);
+
+
 router.put('/:countryId/:teamMemberId', verifyToken, isCountryAdmin, upload.single("profilePicture"), teamsController.updateTeamMember);
 
 

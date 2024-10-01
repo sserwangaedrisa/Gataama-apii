@@ -226,3 +226,19 @@ exports.deleteTeamMember = async (req, res) => {
     }
   };
   
+  exports.deleteMainTeamMember = async (req, res) => {
+    const { teamMemberId } = req.params;
+    
+    try {
+
+      const deletedTeamMember = await prisma.teamMember.delete({
+        where: { id: parseInt(teamMemberId) },
+      });
+  
+      res.status(200).json({ message: "Team member deleted successfully", deletedTeamMember });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Error deleting team member' });
+    }
+  };
+  

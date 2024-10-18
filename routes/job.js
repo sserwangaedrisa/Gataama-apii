@@ -25,15 +25,17 @@ router.post(
 );
 
 router.put(
-  "/:id",
-  verifyToken,
-  jobController.updateJob
-);
-router.put(
   "/main/:id",
   verifyToken,
   isAdmin,
   jobController.updateMainJob
+);
+
+
+router.put(
+  "/:id",
+  verifyToken,
+  jobController.updateJob
 );
 
 router.delete(

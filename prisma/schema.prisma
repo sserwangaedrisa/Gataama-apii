@@ -63,6 +63,7 @@ model Transaction {
   transactionType     String    @default("deposit")
   transactionMethod   String?
   otherNotes          String?
+  donation            Donation? @relation("TransactionToDonation")
   createdAt           DateTime  @default(now())
   updatedAt           DateTime? @updatedAt
 
@@ -78,6 +79,31 @@ model Wallet {
   @@map("wallet")
 }
 
+model Donation {
+  id            Int         @id @default(autoincrement())
+  donorName     String?
+  campaignId    String?
+  message       String?
+  transaction   Transaction  @relation("TransactionToDonation", fields: [transactionId], references: [id], onDelete: Cascade)
+  transactionId Int          @unique
+  createdAt     DateTime     @default(now())
+  isRecurring   Boolean      @default(false)
+
+  @@map("donations")
+}
+
+model Coupon {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  discount    Float    // Percentage (e.g., 10 for 10%) or a fixed amount (e.g., 5 for $5 off)
+  type        String   // 'percentage' or 'fixed'
+  expiresAt   DateTime
+  usageLimit  Int      // How many times this coupon can be used
+  usedCount   Int      @default(0) // Count of how many times this coupon has been used
+  active      Boolean  @default(true) // Indicates if the coupon is still valid
+  
+  @@map("coupons")
+}
 
 
 model Category {

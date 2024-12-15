@@ -23,6 +23,7 @@ const meetingRoutes = require("./routes/meeting");
 const jobRoutes = require("./routes/job");
 const teamRoutes = require("./routes/team");
 const countryContactRoutes = require("./routes/countryContact");
+const donationRoutesSecond = require("./routes/donationSecond")
 
 
 
@@ -72,6 +73,7 @@ app.use("/meeting", meetingRoutes );
 app.use("/job", jobRoutes)
 app.use("/team", teamRoutes)
 app.use("/country-contact", countryContactRoutes);
+app.use('/donations', donationRoutesSecond);
 
 // Handle errors
 app.use((req, res, next) => {

@@ -58,6 +58,7 @@ app.use("/healthz", (req, res) => {
     message: "API is working",
   });
 });
+
 app.use("/posts", postRoutes);
 app.use("/categories", categoryRoutes);
 app.use("/comments", commentRoutes);

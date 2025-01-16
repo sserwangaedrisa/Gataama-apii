@@ -1,4 +1,6 @@
 const Joi = require('joi');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 // users start
 exports.registerUserPolicy = async (req, res, next) => {
@@ -76,6 +78,60 @@ exports.getPaymentUrlPolicy = async (req, res, next) => {
     });
   }
   return next();
+};
+
+exports.getPaymentUrlPolicys = async (req, res, next) => {
+  try {
+    const schema = Joi.object({
+      fullNames: Joi.string().min(3).max(255).required(),
+      email: Joi.string().email({ minDomainSegments: 2 }).required(),
+      currency: Joi.string().required(),
+      amount: Joi.number().integer().min(1).required(),
+      donationType: Joi.string().min(3).required(),
+      donationTitle: Joi.string().min(3).required(),
+    });
+
+    const { fullNames, email, currency, amount, donationType, donationTitle } =
+      req.body;
+
+    // Validate the input
+    const { error } = schema.validate({
+      fullNames,
+      email,
+      currency,
+      amount,
+      donationType,
+      donationTitle,
+    });
+
+    if (error) {
+      return res.status(400).send({
+        message: error.details[0].message,
+      });
+    }
+
+    // Validate that the currency exists in the wallet database
+    const wallet = await prisma.wallet.findFirst({
+      where: {
+        currency: currency,
+        status: 1,
+      },
+    });
+
+    if (!wallet) {
+      return res.status(400).send({
+        message: `Unsupported or inactive currency: ${currency}`,
+      });
+    }
+
+    // Proceed to the next middleware
+    return next();
+  } catch (err) {
+    console.error('Validation error:', err);
+    return res.status(500).send({
+      message: 'Error validating input data.',
+    });
+  }
 };
 // donation end
 // contact form start

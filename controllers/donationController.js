@@ -1,386 +1,226 @@
 const { PrismaClient } = require('@prisma/client');
 const Stripe = require('stripe');
-const Flutterwave = require('flutterwave-node-v3');
 const { v4: uuidv4 } = require('uuid');
+const nodemailer = require('nodemailer');
+const dotenv = require('dotenv');
+
+
+
+dotenv.config();
 
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-const flw = new Flutterwave(
-  process.env.FLW_PUBLIC_KEY,
-  process.env.FLW_SECRET_KEY,
-);
 const prisma = new PrismaClient();
 
-module.exports = {
-  // Stripe Payment Creation for One-time and Recurring Donations
-  async createStripePayment(req, res) {
-    const {
-      amount,
-      currency,
-      email,
-      donorName,
-      isAnonymous,
-      isRecurring,
-      couponCode,
-      donationType
-    } = req.body;
+// Create a payment session
+exports.createStripePaymentSession = async (req, res) => {
+  try {
+    const { amount, currency, donationTitle, donationType, email, fullNames } =
+      req.body;
 
-    // Determine donor name (use null for anonymous donations)
-    const donorNameToSave = isAnonymous ? null : donorName;
+    if (Number(amount) > 0) {
+      const tx_ref = uuidv4();
 
-    try {
-      let couponId = null;
-      // Handle coupon validation if provided
-      if (couponCode) {
-        const coupon = await stripe.coupons.retrieve(couponCode);
-        if (!coupon || !coupon.valid) {
-          return res.status(400).json({
-            success: false,
-            message: 'Invalid coupon code',
-          });
-        }
-        couponId = coupon.id;
-      }
-
-      if (!isRecurring) {
-        // Handle one-time donation
-
-        const paymentIntentParams = {
-          amount: amount * 100, // Stripe expects amount in cents
-          currency,
-          receipt_email: email,
-          metadata: {
-            donorName: donorNameToSave || 'Anonymous',
-            purpose: 'Donation',
-          },
-        };
-
-        if (couponId) {
-          paymentIntentParams.coupon = couponId;
-        }
-
-        const paymentIntent = await stripe.paymentIntents.create(
-          paymentIntentParams,
-        );
-
-        // Create transaction record in the database
-        const transaction = await prisma.transaction.create({
-          data: {
-            amount,
-            currency,
-            email,
-            fullNames: donorNameToSave || 'Anonymous',
-            status: 'initiated',
-            transactionType: 'deposit',
-            tx_ref: paymentIntent.id, // Store PaymentIntent ID as reference
-            donationType,
-          },
-        });
-
-        // Create donation record
-        await prisma.donation.create({
-          data: {
-            donorName: donorNameToSave,
-            transactionId: transaction.id,
-            isRecurring: false,
-          },
-        });
-
-        return res.json({
-          success: true,
-          message: 'Donation created successfully',
-          clientSecret: paymentIntent.client_secret, // Provide client secret for frontend
-        });
-      } else {
-        // Handle recurring donation
-
-        // Create a product and price for the subscription
-        const product = await stripe.products.create({
-          name: 'Recurring Donation',
-          description: 'Monthly Donation Subscription',
-        });
-
-        const price = await stripe.prices.create({
-          unit_amount: amount * 100,
-          currency,
-          recurring: { interval: 'month' },
-          product: product.id,
-        });
-
-        const sessionParams = {
-          payment_method_types: ['card'],
-          line_items: [{ price: price.id, quantity: 1 }],
-          mode: 'subscription',
-          customer_email: email,
-          success_url:
-            'https://your-domain.com/payment-success?session_id={CHECKOUT_SESSION_ID}',
-          cancel_url: 'https://your-domain.com/payment-cancel',
-          metadata: {
-            donorName: donorNameToSave || 'Anonymous',
-            purpose: 'Recurring Donation',
-          },
-        };
-
-        if (couponId) {
-          sessionParams.discount = { coupon: couponId };
-        }
-
-        const session = await stripe.checkout.sessions.create(sessionParams);
-
-        // Create transaction record for subscription
-        const transaction = await prisma.transaction.create({
-          data: {
-            amount,
-            currency,
-            email,
-            fullNames: donorNameToSave || 'Anonymous',
-            status: 'initiated',
-            transactionType: 'subscription',
-            tx_ref: session.id,
-            donationType: 'recurring', // Mark as recurring donation
-          },
-        });
-
-        // Create donation record
-        await prisma.donation.create({
-          data: {
-            donorName: donorNameToSave,
-            transactionId: transaction.id,
-            isRecurring: true,
-          },
-        });
-
-        return res.json({
-          success: true,
-          message: 'Recurring donation created successfully',
-          checkoutUrl: session.url, // Provide URL to redirect to Stripe Checkout
-        });
-      }
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: `Stripe Error: ${error.message}`,
-      });
-    }
-  },
-
-  // Flutterwave Payment Creation for One-time and Recurring Donations
-  async createFlutterwavePayment(req, res) {
-    const {
-      amount,
-      currency,
-      email,
-      donorName,
-      isAnonymous,
-      isRecurring,
-      couponCode,
-    } = req.body;
-
-    // Determine donor name (use null for anonymous donations)
-    const donorNameToSave = isAnonymous ? null : donorName || email;
-
-    try {
-      let couponId = null;
-      // Validate coupon code if provided
-      if (couponCode) {
-        const coupon = await flw.Coupons.retrieve(couponCode);
-        if (!coupon || coupon.status !== 'active') {
-          return res.status(400).json({
-            success: false,
-            message: 'Invalid or inactive coupon code',
-          });
-        }
-        couponId = coupon.id;
-      }
-
-      if (!isRecurring) {
-        // Handle one-time payment
-
-        const payload = {
-          tx_ref: uuidv4(),
-          amount: couponId ? amount - coupon.discountAmount : amount,
-          currency,
-          redirect_url: 'https://your-domain.com/payment-success',
-          customer: { email },
-          customizations: {
-            title: 'Donation',
-            description: 'Donation Payment',
-          },
-          metadata: { donorName: donorNameToSave },
-        };
-
-        const response = await flw.PaymentInitiate(payload);
-
-        if (response.status === 'success') {
-          // Create donation record in the database
-          await prisma.donation.create({
-            data: {
-              donorName: donorNameToSave,
-              amount,
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
               currency,
-              email,
-              transactionId: response.data.tx_ref,
-              status: 'pending',
-              isRecurring: false,
+              product_data: {
+                name: donationTitle,
+                description: `Donation for ${donationType}`,
+              },
+              unit_amount: amount * 100, // Stripe uses smallest currency unit
             },
-          });
-
-          return res.json({
-            success: true,
-            message: 'Donation created successfully',
-            paymentLink: response.data.link,
-          });
-        } else {
-          throw new Error('Flutterwave payment initiation failed');
-        }
-      } else {
-        // Handle recurring donation
-
-        const subscriptionPayload = {
-          tx_ref: uuidv4(),
-          amount: couponId ? amount - coupon.discountAmount : amount,
-          currency,
-          redirect_url: 'https://your-domain.com/payment-success',
-          interval: 'monthly',
-          customer: { email },
-          customizations: {
-            title: 'Recurring Donation',
-            description: 'Recurring Donation Payment',
+            quantity: 1,
           },
-          plan: {
-            name: 'Monthly Donation Plan',
-            description: 'Recurring monthly donation',
-            interval: 'monthly',
-            amount: (couponId ? amount - coupon.discountAmount : amount) * 100,
-          },
-        };
-
-        const response = await flw.SubscriptionCreate(subscriptionPayload);
-
-        if (response.status === 'success') {
-          // Create recurring donation record
-          await prisma.donation.create({
-            data: {
-              donorName: donorNameToSave,
-              amount,
-              currency,
-              email,
-              transactionId: response.data.tx_ref,
-              status: 'pending',
-              isRecurring: true,
-            },
-          });
-
-          return res.json({
-            success: true,
-            message: 'Recurring donation created successfully',
-            paymentLink: response.data.link,
-          });
-        } else {
-          throw new Error('Flutterwave subscription creation failed');
-        }
-      }
-    } catch (error) {
-      console.error('Error during payment creation:', error);
-      res.status(500).json({
-        success: false,
-        message: `Flutterwave Error: ${error.message}`,
-      });
-    }
-  },
-
-  // Fetch Donation History by Donor ID
-  async getDonationHistoryById(req, res) {
-    const { donorId } = req.params;
-
-    try {
-      const donations = await prisma.donation.findMany({
-        where: { donorId },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      if (!donations.length) {
-        return res.status(404).json({
-          success: false,
-          message: 'No donations found for this donor.',
-        });
-      }
-
-      res.status(200).json({
-        success: true,
-        donations,
-      });
-    } catch (error) {
-      console.error('Error fetching donation history:', error);
-      res.status(500).json({
-        success: false,
-        message: `Error fetching donation history: ${error.message}`,
-      });
-    }
-  },
-
-  // Fetch Donation History by Donor Email
-  async getDonationHistoryByEmail(req, res) {
-    const { email } = req.params;
-
-    try {
-      const donations = await prisma.donation.findMany({
-        where: { donorEmail: email },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      if (!donations.length) {
-        return res.status(404).json({
-          success: false,
-          message: 'No donations found for this donor.',
-        });
-      }
-
-      res.status(200).json({
-        success: true,
-        donations,
-      });
-    } catch (error) {
-      console.error('Error fetching donation history:', error);
-      res.status(500).json({
-        success: false,
-        message: `Error fetching donation history: ${error.message}`,
-      });
-    }
-  },
-
-  // Fetch All Donors and Their Donation History
-  async fetchAllDonors(req, res) {
-    try {
-      const donors = await prisma.donation.findMany({
-        include: {
-          transaction: {
-            select: {
-              tx_ref: true,
-              amount: true,
-              status: true,
-              currency: true,
-            },
-          },
+        ],
+        mode: 'payment',
+        success_url: `${process.env.PAYMENT_URL}/donation-status?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.PAYMENT_URL}/donation-cancelled`,
+        metadata: {
+          donationType,
+          tx_ref,
         },
       });
 
-      if (!donors.length) {
-        return res.status(404).json({
-          success: false,
-          message: 'No donors found.',
-        });
-      }
-
-      res.status(200).json({
-        success: true,
-        donors,
+      // Store the transaction in your database
+      await prisma.transaction.create({
+        data: {
+          tx_ref,
+          amount,
+          currency,
+          donationType,
+          email,
+          fullNames,
+          transactionType: 'deposit',
+        },
       });
+
+      res.status(200).send({ url: session.url });
+    } else {
+      res.status(403).send({ message: 'Invalid amount set' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: process.env.ERROR_MESSAGE });
+  }
+};
+
+// Handle Stripe Webhook
+exports.stripeWebhook = async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const endpointSecret = process.env.STRIPE_ENDPOINT_SECRET;
+
+  // Handle manual requests
+  if (!sig) {
+    console.log('Manual request detected');
+    const { session_id } = req.body;
+
+    if (!session_id) {
+      return res.status(400).json({ message: 'Session ID is required' });
+    }
+
+    try {
+      const session = await stripe.checkout.sessions.retrieve(session_id);
+      if (session.payment_status === 'paid') {
+        return res
+          .status(200)
+          .json({ message: 'Payment confirmed successfully!' });
+      } else {
+        return res.status(400).json({ message: 'Payment not completed' });
+      }
     } catch (error) {
-      console.error('Error fetching all donors:', error);
-      res.status(500).json({
-        success: false,
-        message: `Error fetching all donors: ${error.message}`,
+      console.error('Error retrieving payment session:', error.message);
+      return res.status(500).json({
+        message: 'Failed to fetch payment session',
+        error: error.message,
       });
     }
-  },
+  }
+
+  // Handle actual Stripe webhook events
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+  } catch (err) {
+    console.error(`Webhook signature verification failed: ${err.message}`);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+
+    try {
+      // Retrieve metadata and save the transaction to the database
+      const { tx_ref, donationType } = session.metadata;
+      const { amount_total, currency } = session;
+      const { email, name } = session.customer_details;
+
+      const transaction = await prisma.transaction.create({
+        data: {
+          tx_ref,
+          amount: amount_total / 100,
+          currency,
+          donationType,
+          email,
+          fullNames: name,
+          transactionType: 'deposit',
+        },
+      });
+
+      // Send a thank-you email
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.ionos.com',
+        port: 587,
+        auth: {
+          user: process.env.SENDER_EMAIL,
+          pass: process.env.SENDER_EMAIL_PASSWORD,
+        },
+      });
+
+      const message = {
+        from: `"Gataama" <${process.env.SENDER_EMAIL}>`,
+        to: transaction.email,
+        subject: `Thank you for your Donation`,
+        html: `<!DOCTYPE html>
+          <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Receipt Gataama</title>
+              <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.2/css/bootstrap.min.css"
+                integrity="sha512-CpIKUSyh9QX2+zSdfGP+eWLx23C8Dj9/XmHjZY2uDtfkdLGo0uY12jgcnkX9vXOgYajEKb/jiw67EYm+kBf+6g=="
+                crossorigin="anonymous" referrerpolicy="no-referrer" />
+              <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet" />
+            </head>
+            <body>
+              <div class="container">
+                <div class="row">
+                  <div class="col">
+                    <p>Dear ${transaction.fullNames}</p>
+                    <p>I hope this message finds you well. On behalf of Gataama, I want to express our deepest gratitude for your generous donation of ${transaction.currency} ${transaction.amount} to support our cause.</p>
+                    <p>Your contribution means more than words can express. With your support, we can continue our efforts to promote unity, empowerment, and progress across the African continent and its diaspora. Your belief in our mission is truly inspiring, and it reaffirms our commitment to making a positive impact in the lives of people throughout Africa and beyond.</p>
+                    <p>Your donation will directly contribute to initiatives aimed at fostering social, economic, and political development, as well as promoting cultural exchange and solidarity among African communities worldwide.</p>
+                    <p>Once again, thank you for your generosity and support. Together, we can work towards a brighter future for all Africans.</p>
+                    <p>With heartfelt thanks,</p>
+                    <br />
+                    <p>Best,</p>
+                    <h3>The Management of GATAAMA FOUNDATION.</h3>
+                  </div>
+                </div>
+              </div>
+            </body>
+          </html>`,
+      };
+
+      await transporter.sendMail(message);
+
+      console.log(`Email sent to ${transaction.email}`);
+    } catch (error) {
+      console.error('Error handling webhook event:', error.message);
+    }
+  }
+
+  res.status(200).json({ received: true });
 };
+
+// Get available currencies
+exports.getCurrencies = async (req, res) => {
+  try {
+    const currencies = await prisma.wallet.findMany({
+      where: { status: 1 },
+      orderBy: { currency: 'asc' },
+    });
+
+    res.status(200).send({ currencies });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: process.env.ERROR_MESSAGE });
+  }
+};
+
+// Admin analytics
+exports.getAdminAnalytics = async (req, res) => {
+  try {
+    const wallets = await prisma.wallet.findMany({
+      where: {
+        amount: { gt: 0 },
+        status: 1,
+      },
+      orderBy: { currency: 'asc' },
+    });
+
+    const transactions = await prisma.transaction.findMany({
+      where: { status: 'successful' },
+      orderBy: { createdAt: 'desc' },
+      take: 20, // Limit to 20 transactions
+    });
+
+    res.status(200).send({ wallets, transactions });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: process.env.ERROR_MESSAGE });
+  }
+};
+

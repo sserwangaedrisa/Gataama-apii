@@ -45,8 +45,6 @@ exports.register = async (req, res) => {
   }
 };
 
-
-
 exports.login = async (req, res) => {
   try {
     const user = await prisma.user.findFirst({

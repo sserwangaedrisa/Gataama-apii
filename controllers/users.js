@@ -299,8 +299,6 @@ exports.deleteUser = async (req, res) => {
 };
 
 
-
-
 const generateToken = (user) => {
   return jwt.sign(
     {

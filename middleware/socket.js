@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
-// const db = require('./db');
-const chatMessage = require('../controllers/chat');
+const db = require('./db');
+const chatMessage = require("../controllers/chat")
 
 module.exports = (io) => {
   io.on('connection', (socket) => {
@@ -36,13 +36,13 @@ module.exports = (io) => {
       }
     });
 
-    // AI Chat bot
-    socket.on('chatMessage', (messageData) =>
-      chatMessage(io, socket, messageData),
-    );
-
+    //Ai Chat bot
+    socket.on('chatMessage', (messageData) => chatMessage(io, socket, messageData));
+    
     socket.on('disconnect', () => {
       console.log('User disconnected');
     });
   });
+  
+  return socket;
 };

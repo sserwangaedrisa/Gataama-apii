@@ -4,8 +4,6 @@ const { v4: uuidv4 } = require('uuid');
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
 
-
-
 dotenv.config();
 
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
@@ -22,6 +20,7 @@ exports.createStripePaymentSession = async (req, res) => {
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
+        customer_email: email, // ✅ Ensures `customer_email` is always set
         line_items: [
           {
             price_data: {
@@ -30,7 +29,7 @@ exports.createStripePaymentSession = async (req, res) => {
                 name: donationTitle,
                 description: `Donation for ${donationType}`,
               },
-              unit_amount: amount * 100, // Stripe uses smallest currency unit
+              unit_amount: amount * 100, // Stripe uses the smallest currency unit
             },
             quantity: 1,
           },
@@ -44,7 +43,7 @@ exports.createStripePaymentSession = async (req, res) => {
         },
       });
 
-      // Store the transaction in your database
+      // Store the transaction in the database
       await prisma.transaction.create({
         data: {
           tx_ref,
@@ -62,7 +61,7 @@ exports.createStripePaymentSession = async (req, res) => {
       res.status(403).send({ message: 'Invalid amount set' });
     }
   } catch (error) {
-    console.error(error);
+    console.error('Error creating payment session:', error);
     res.status(500).send({ message: process.env.ERROR_MESSAGE });
   }
 };
@@ -83,6 +82,8 @@ exports.stripeWebhook = async (req, res) => {
 
     try {
       const session = await stripe.checkout.sessions.retrieve(session_id);
+      // console.log('Session Data:', JSON.stringify(session, null, 2));
+
       if (session.payment_status === 'paid') {
         return res
           .status(200)
@@ -103,19 +104,43 @@ exports.stripeWebhook = async (req, res) => {
   let event;
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    console.log('Webhook signature is valid');
   } catch (err) {
     console.error(`Webhook signature verification failed: ${err.message}`);
+    console.log('Received headers:', req.headers);
+    console.log('Received body:', req.body);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
+    console.log('Sessions:', session);
+    console.log(
+      '✔ Stripe Webhook Event Received:',
+      JSON.stringify(event, null, 2),
+    );
+
+    // Further debugging
+    console.log('Raw session data:', JSON.stringify(session, null, 2));
 
     try {
       // Retrieve metadata and save the transaction to the database
       const { tx_ref, donationType } = session.metadata;
       const { amount_total, currency } = session;
-      const { email, name } = session.customer_details;
+
+      const email = session.customer_email || session.customer_details?.email; // ✅ Fix missing email issue
+      const fullNames = session.customer_details?.name || 'Donor'; // ✅ Ensure name fallback
+
+      console.log(
+        `🔍 Extracted Details - Email: ${email}, Name: ${fullNames}, Amount: ${
+          amount_total / 100
+        }`,
+      );
+
+      if (!email) {
+        console.error('Error: No email found for session', session);
+        return res.status(400).json({ message: 'Missing email in session' });
+      }
 
       const transaction = await prisma.transaction.create({
         data: {
@@ -124,10 +149,14 @@ exports.stripeWebhook = async (req, res) => {
           currency,
           donationType,
           email,
-          fullNames: name,
+          fullNames,
           transactionType: 'deposit',
         },
       });
+
+      console.log(
+        `✅ Transaction recorded in database for ${transaction.email}`,
+      );
 
       // Send a thank-you email
       const transporter = nodemailer.createTransport({
@@ -142,7 +171,7 @@ exports.stripeWebhook = async (req, res) => {
 
       const message = {
         from: `"Gataama" <${process.env.SENDER_EMAIL}>`,
-        to: transaction.email,
+        to: `${transaction.email}`,
         subject: `Thank you for your Donation`,
         html: `<!DOCTYPE html>
           <html lang="en">
@@ -150,34 +179,27 @@ exports.stripeWebhook = async (req, res) => {
               <meta charset="UTF-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
               <title>Receipt Gataama</title>
-              <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.2/css/bootstrap.min.css"
-                integrity="sha512-CpIKUSyh9QX2+zSdfGP+eWLx23C8Dj9/XmHjZY2uDtfkdLGo0uY12jgcnkX9vXOgYajEKb/jiw67EYm+kBf+6g=="
-                crossorigin="anonymous" referrerpolicy="no-referrer" />
               <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet" />
             </head>
             <body>
               <div class="container">
-                <div class="row">
-                  <div class="col">
-                    <p>Dear ${transaction.fullNames}</p>
-                    <p>I hope this message finds you well. On behalf of Gataama, I want to express our deepest gratitude for your generous donation of ${transaction.currency} ${transaction.amount} to support our cause.</p>
-                    <p>Your contribution means more than words can express. With your support, we can continue our efforts to promote unity, empowerment, and progress across the African continent and its diaspora. Your belief in our mission is truly inspiring, and it reaffirms our commitment to making a positive impact in the lives of people throughout Africa and beyond.</p>
-                    <p>Your donation will directly contribute to initiatives aimed at fostering social, economic, and political development, as well as promoting cultural exchange and solidarity among African communities worldwide.</p>
-                    <p>Once again, thank you for your generosity and support. Together, we can work towards a brighter future for all Africans.</p>
-                    <p>With heartfelt thanks,</p>
-                    <br />
-                    <p>Best,</p>
-                    <h3>The Management of GATAAMA FOUNDATION.</h3>
-                  </div>
-                </div>
+                <p>Dear ${transaction.fullNames},</p>
+                <p>Thank you for your generous donation of ${transaction.currency} ${transaction.amount} to support our cause.</p>
+                <p>With your support, we can continue our mission to empower communities and drive positive change.</p>
+                <p>Once again, thank you for your generosity and support.</p>
+                <p>Best regards,</p>
+                <h3>The Management of GATAAMA FOUNDATION.</h3>
               </div>
             </body>
           </html>`,
       };
 
-      await transporter.sendMail(message);
-
-      console.log(`Email sent to ${transaction.email}`);
+      try {
+        let info = await transporter.sendMail(message);
+        console.log(`Email sent: ${info.messageId} to ${transaction.email}`);
+      } catch (err) {
+        console.error('Email sending error:', err);
+      }
     } catch (error) {
       console.error('Error handling webhook event:', error.message);
     }
@@ -196,7 +218,7 @@ exports.getCurrencies = async (req, res) => {
 
     res.status(200).send({ currencies });
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching currencies:', error);
     res.status(500).send({ message: process.env.ERROR_MESSAGE });
   }
 };
@@ -220,8 +242,7 @@ exports.getAdminAnalytics = async (req, res) => {
 
     res.status(200).send({ wallets, transactions });
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching admin analytics:', error);
     res.status(500).send({ message: process.env.ERROR_MESSAGE });
   }
 };
-

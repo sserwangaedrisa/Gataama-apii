@@ -14,8 +14,8 @@ router.post(
 );
 router.post(
   '/webhook',
-  // bodyParser.raw({ type: 'application/json' }),
-  express.raw({ type: 'application/json' }),
+  bodyParser.raw({ type: 'application/json' }),
+  // express.raw({ type: 'application/json' }),
   donationController.stripeWebhook,
 );
 

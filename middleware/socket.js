@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const db = require('./db');
-const chatMessage = require("../controllers/chat")
+const chatMessage = require('../controllers/chat');
 
 module.exports = (io) => {
   io.on('connection', (socket) => {
@@ -29,20 +29,20 @@ module.exports = (io) => {
           vendorId,
         ];
 
-        // await db.query(sql, values);
+        await db.query(sql, values);
         console.log('Vendor location updated successfully');
       } catch (err) {
         console.error('Error updating vendor location:', err);
       }
     });
 
-    //Ai Chat bot
-    socket.on('chatMessage', (messageData) => chatMessage(io, socket, messageData));
-    
+    // AI Chat bot
+    socket.on('chatMessage', (messageData) =>
+      chatMessage(io, socket, messageData),
+    );
+
     socket.on('disconnect', () => {
       console.log('User disconnected');
     });
   });
-  
-  return socket;
 };

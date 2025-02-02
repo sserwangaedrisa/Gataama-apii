@@ -1,45 +1,48 @@
 const jwt = require('jsonwebtoken');
 const db = require('./db');
-const chatMessage = require("../controllers/chat")
+const chatMessage = require('../controllers/chat');
 
 module.exports = (io) => {
-  // create sockect connection
-  const socket = io.on('connection', (socket) => {
-    console.log('a user connected');
-    socket.on('liveLocation', (liveLocationData) => {
-      // decode token to get vendorId
-      // const decoded = jwt.verify(liveLocationData.token, process.env.JWT_SECRET);
-      // update liveLocation table
-      db.getConnection((err, connection) => {
-        if (err) {
-          console.log('err1', err);
-        }
-        console.log('inside liveLocation', liveLocationData);
-        // const vendorId = decoded.id
+  io.on('connection', (socket) => {
+    console.log('A user connected');
+
+    socket.on('liveLocation', async (liveLocationData) => {
+      try {
+        // Decode token to get vendorId
+        // const decoded = jwt.verify(liveLocationData.token, process.env.JWT_SECRET);
+        // const vendorId = decoded.id;
         const vendorId = 9;
-        const updates = {
-          status: 1,
-          latitude: liveLocationData.latitude,
-          longitude: liveLocationData.longitude,
-          socketId: socket.id,
-        };
-        const sql = `UPDATE vendorLocation SET ? WHERE vendorId = ${vendorId}`;
-        connection.query(sql, updates, (err1, result) => {
-          connection.release();
-          if (err1) {
-            console.log('err', err1);
-          }
-        });
-      });
+
+        console.log('Inside liveLocation', liveLocationData);
+
+        // Update vendorLocation table
+        const sql = `
+          UPDATE "vendorLocation"
+          SET status = $1, latitude = $2, longitude = $3, "socketId" = $4
+          WHERE "vendorId" = $5
+        `;
+        const values = [
+          1,
+          liveLocationData.latitude,
+          liveLocationData.longitude,
+          socket.id,
+          vendorId,
+        ];
+
+        await db.query(sql, values);
+        console.log('Vendor location updated successfully');
+      } catch (err) {
+        console.error('Error updating vendor location:', err);
+      }
     });
 
-    //Ai Chat bot
-    socket.on('chatMessage', (messageData) => chatMessage(io, socket, messageData));
-    
+    // AI Chat bot
+    socket.on('chatMessage', (messageData) =>
+      chatMessage(io, socket, messageData),
+    );
+
     socket.on('disconnect', () => {
-      console.log('user disconnected');
+      console.log('User disconnected');
     });
   });
-  
-  return socket;
 };

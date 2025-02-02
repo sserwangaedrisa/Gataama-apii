@@ -11,11 +11,17 @@ dotenv.config();
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const prisma = new PrismaClient();
 
+console.log('Stripe Webhook Secret:', process.env.STRIPE_ENDPOINT_SECRET);
+
 // Create a payment session
 exports.createStripePaymentSession = async (req, res) => {
   try {
     const { amount, currency, donationTitle, donationType, email, fullNames } =
       req.body;
+    
+    console.log('Received webhook:', req.body);
+    console.log('Headers:', req.headers);
+    console.log('Signature:', sig);
 
     if (Number(amount) > 0) {
       const tx_ref = uuidv4();
@@ -83,6 +89,7 @@ exports.stripeWebhook = async (req, res) => {
 
     try {
       const session = await stripe.checkout.sessions.retrieve(session_id);
+      console.log('Retrieved session:', session);
       if (session.payment_status === 'paid') {
         return res
           .status(200)
@@ -108,6 +115,8 @@ exports.stripeWebhook = async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
+  console.log(req.body);
+  
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
 
@@ -129,18 +138,38 @@ exports.stripeWebhook = async (req, res) => {
         },
       });
 
-      // Send a thank-you email
-      const transporter = nodemailer.createTransport({
-        host: 'smtp.ionos.com',
-        port: 587,
-        auth: {
-          user: process.env.SENDER_EMAIL,
-          pass: process.env.SENDER_EMAIL_PASSWORD,
-        },
+      console.log('Transaction saved:', transaction);
+
+      console.log('Webhook event type:', event.type);
+      console.log('Transaction data:', {
+        tx_ref,
+        amount_total,
+        currency,
+        email,
+        name,
       });
 
+      // Send a thank-you email
+      const transporter = nodemailer.createTransport({
+        host: 'mail.spacemail.com',
+        port: 465,
+        secure: true,
+        auth: {
+          user: process.env.SENDER_EMAIL || 'donations@gataama.com',
+          pass: process.env.SENDER_EMAIL_PASSWORD || 'ABCabc123*#',
+        },
+        logger: true,
+        debug: true,
+      });
+
+      console.log(process.env.SENDER_EMAIL);
+      console.log(process.env.SENDER_EMAIL_PASSWORD);
+
+
       const message = {
-        from: `"Gataama" <${process.env.SENDER_EMAIL}>`,
+        from: `"Gataama" <${
+          process.env.SENDER_EMAIL || 'donations@gataama.com'
+        }>`,
         to: transaction.email,
         subject: `Thank you for your Donation`,
         html: `<!DOCTYPE html>
@@ -174,9 +203,16 @@ exports.stripeWebhook = async (req, res) => {
           </html>`,
       };
 
-      await transporter.sendMail(message);
+      transporter.sendMail(message, (error, info) => {
+        if (error) {
+          console.error('Error sending email:', error);
+        } else {
+          console.log('Email sent:', info.response);
+        }
+      });
 
       console.log(`Email sent to ${transaction.email}`);
+
     } catch (error) {
       console.error('Error handling webhook event:', error.message);
     }

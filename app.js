@@ -8,6 +8,9 @@ const bodyParser = require("body-parser");
 const path = require("path");
 const session = require("express-session");
 const passport = require("passport");
+const swaggerUi = require("swagger-ui-express")
+const YAML = require("yamljs")
+const swaggerDocs = YAML.load("./swagger.yaml")
 
 // Import routes
 const UserRoutes = require("./routes/user");
@@ -39,6 +42,9 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 app.use(morgan("dev"));
+
+// Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs))
 
 // Session and Passport setup
 app.use(

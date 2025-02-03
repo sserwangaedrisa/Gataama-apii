@@ -1,5 +1,5 @@
 const nodemailer = require("nodemailer");
-const db = require("../middleware/db");
+// const db = require("../middleware/db");
 
 exports.contactForm = async (req, res) => {
   try {

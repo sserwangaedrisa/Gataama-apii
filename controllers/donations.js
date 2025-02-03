@@ -3,7 +3,7 @@ const nodemailer = require("nodemailer");
 const url = require("url");
 const axios = require("axios");
 const https = require("https");
-const db = require("../middleware/db");
+// const db = require("../middleware/db");
 
 exports.getPaymentUrl = async (req, res) => {
   try {

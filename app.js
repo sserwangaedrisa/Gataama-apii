@@ -9,8 +9,9 @@ const path = require("path");
 const session = require("express-session");
 const passport = require("passport");
 const swaggerUi = require("swagger-ui-express")
-const YAML = require("yamljs")
-const swaggerDocs = YAML.load("./swagger.yaml")
+const swaggerJsDocs = require("swagger-jsdoc")
+// const YAML = require("yamljs")
+// const swaggerDocs = YAML.load("./swagger.yaml")
 
 // Import routes
 const UserRoutes = require("./routes/user");
@@ -44,6 +45,17 @@ app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 app.use(morgan("dev"));
 
 // Swagger UI
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Gataama API",
+      version: "1.0.0",
+    },
+  },
+  apis: ["./routes/*.js"], // Points to your API routes
+};
+const swaggerDocs = swaggerJsDocs(swaggerOptions)
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs))
 
 // Session and Passport setup

@@ -7,13 +7,20 @@ const router = express.Router();
 const verifyToken = require("../middleware/auth");
 const { isAdmin } = require("../middleware/role");
 
-router.post(
-  "/register",
-  verifyToken,
-  isAdmin,
-  validation.registerUserPolicy,
-  UserController.register
-);
+
+/**
+ * @swagger
+ * /register:
+ *    post:
+ *        summary; register user
+ */
+  router.post(
+    "/register",
+    verifyToken,
+    isAdmin,
+    validation.registerUserPolicy,
+    UserController.register
+  );
 
 router.post("/login", validation.loginUserPolicy, UserController.login);
 

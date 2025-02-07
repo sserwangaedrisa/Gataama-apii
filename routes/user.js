@@ -9,27 +9,163 @@ const { isAdmin } = require("../middleware/role");
 
 
 /**
- * @swagger
- * /register:
- *    post:
- *        summary; register user
+ * @openapi
+ * /user/register:
+ *   post:
+ *     tags:
+ *       - User
+ *     summary: creates user's account
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RegisterUserInput'
+ *     responses:
+ *       201:
+ *         description: user created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/RegisterUserResponse'
+ *       400:
+ *         description: error in account creation
+ *       403:
+ *         description: error in input values
+ *       404:
+ *         description: unauthorized
  */
-  router.post(
-    "/register",
-    verifyToken,
-    isAdmin,
-    validation.registerUserPolicy,
-    UserController.register
-  );
+router.post(
+  "/register",
+  verifyToken,
+  isAdmin,
+  validation.registerUserPolicy,
+  UserController.register
+);
 
+/**
+ * @openapi
+ * /user/login:
+ *   post:
+ *     tags:
+ *       - User
+ *     summary: authorization
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginUserInput'
+ *     responses:
+ *       200:
+ *         description: logged in successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginUserResponse'
+ *       403:
+ *         description: account is locked
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       406:
+ *         description: invalid email or password
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: invalid email or password
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.post("/login", validation.loginUserPolicy, UserController.login);
 
+/**
+ * @openapi
+ * /user/forgotpassword:
+ *   patch:
+ *     tags:
+ *       - User
+ *     summary: request new password
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RequestNewPassword'
+ *     responses:
+ *       200:
+ *         description: password changed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       403:
+ *         description: account issue
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.patch(
   "/forgotPassword",
   validation.forgotPasswordPolicy,
   UserController.forgotPassword
 );
 
+/**
+ * @openapi
+ * /user/profile/:id:
+ *   put:
+ *     tags:
+ *       - User
+ *     summary: updated user by id
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User Id
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RegisterUserInput'
+ *     responses:
+ *       200:
+ *         description: user updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: error occured
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: user not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.put(
   "/profile/:id",
   verifyToken,

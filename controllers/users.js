@@ -2,7 +2,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const nodemailer = require("nodemailer");
-const db = require("../middleware/db");
+// const db = require("../middleware/db");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const passport = require("passport");
@@ -201,7 +201,7 @@ exports.forgotPassword = async (req, res) => {
           console.error("Error sending email:", err3);
           return res.status(500).send({
             success: false,
-            error: err3,
+            message: err3,
           });
         }
         return res.status(200).send({
@@ -218,6 +218,7 @@ exports.forgotPassword = async (req, res) => {
   } catch (error) {
     console.error("Error resetting password:", error);
     res.status(500).send({
+      success: false,
       message: process.env.ERROR_MESSAGE,
     });
   }
@@ -235,6 +236,7 @@ exports.updateUser = async (req, res) => {
 
     if (!existingUser) {
       return res.status(404).send({
+        success: false,
         message: "User not found",
       });
     }
@@ -258,10 +260,12 @@ exports.updateUser = async (req, res) => {
     });
 
     return res.status(200).send({
+      sucess: true,
       message: `Updated user ${updatedUser.fullNames} successfully`,
     });
   } catch (error) {
     return res.status(400).send({
+      success: false,
       message: error.message,
     });
   }
@@ -289,6 +293,7 @@ exports.deleteUser = async (req, res) => {
     });
 
     return res.status(200).send({
+      success: true,
       message: `Deleted user ${existingUser.fullNames} successfully`,
     });
   } catch (error) {

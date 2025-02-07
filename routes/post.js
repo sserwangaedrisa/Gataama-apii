@@ -23,7 +23,6 @@ router.put(
   "/publish/:id",
   verifyToken,
   isAdmin,
-  
   postController.publishPost
 );
 router.put(

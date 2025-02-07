@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const db = require('./db');
+// const db = require('./db');
 const chatMessage = require('../controllers/chat');
 
 module.exports = (io) => {
@@ -29,7 +29,7 @@ module.exports = (io) => {
           vendorId,
         ];
 
-        await db.query(sql, values);
+        // await db.query(sql, values);
         console.log('Vendor location updated successfully');
       } catch (err) {
         console.error('Error updating vendor location:', err);

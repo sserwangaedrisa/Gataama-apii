@@ -139,7 +139,7 @@ router.patch(
  *         in: path
  *         required: true
  *         schema:
- *           type: string
+ *           type: interger
  *         description: User Id
  *     requestBody:
  *       content:
@@ -173,6 +173,34 @@ router.put(
   UserController.updateUser
 );
 
+/**
+ * @openapi
+ * /user/:id:
+ *  delete:
+ *    tags:
+ *      - User
+ *    summary: delete user by id
+ *    security:
+ *      - bearerAuth: []
+ *    parameters:
+ *      - name: id
+ *        in: path
+ *        required: true
+ *        schema:
+ *          type: interger
+ *        description: User Id
+ *    responses:
+ *      200:
+ *        description: user deleted successfully
+ *        content:
+ *          application/json:
+ *            schema:
+ *              $ref: '#/components/schemas/SuccessResponse'
+ *      400:
+ *        description: error occured
+ *      404:
+ *        description: user not found
+ */
 router.delete("/:id",verifyToken, isAdmin, UserController.deleteUser);
 
 router.get(
@@ -180,6 +208,23 @@ router.get(
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
+/**
+ * @openapi
+ * /user/admins:
+ *   get:
+ *     tags:
+ *       - User
+ *     security:
+ *       - bearerAuth: []
+ *     summary: retrive all admin accounts
+ *     responses:
+ *       200:
+ *         description: retrival successfull
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/RetriveAdmins'
+ */
 router.get(
   "/admins", checkAuth, UserController.getAdmin)
 

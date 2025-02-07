@@ -66,6 +66,25 @@ module.exports = {
                     success: { type: 'boolean', default: false },
                     message: { type: 'string', }
                 },
+            },
+            RetriveAdmins: {
+                type: 'object',
+                properties: {
+                    message: { type: 'string' },
+                    admins: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                id: { type: 'string', description: 'user full name' },
+                                fullNames: { type: 'string', description: 'user full name' },
+                                email: { type: 'string', description: 'user email address' },
+                                role: { type: 'string', description: 'account role' },
+                                createdAt: { type: 'string', description: 'user full name' }
+                            },
+                        },
+                    },
+                },
             }
         },
         securitySchemes: {

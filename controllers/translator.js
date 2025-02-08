@@ -1,6 +1,5 @@
 const { translate, languages } = require("google-translate-api-x");
 const asyncHandler = require("express-async-handler");
-const axios = require("axios");
 
 const supportedLanguage = asyncHandler(async (req, res) => {
     return res.status(200).json(languages)
@@ -18,10 +17,12 @@ const translator = asyncHandler(async (req, res) => {
     });
     
     if(result){
-        return res.status(200).json({ 
+        return res.status(200).json({
             translatedText: result.text,
-            languages
+            from: result.raw[1][3],
+            to: result.raw[1][1]
         });
+
     } else {
         return res.status(500).json({ message: 'Translation failed' })
     }

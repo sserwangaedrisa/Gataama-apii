@@ -1,5 +1,5 @@
 const Together = require("together-ai");
-const together = new Together();
+const together = new Together({ apiKey: process.env.TOGETHER_API_KEY }); 
 require('dotenv').config();
 
 const chatMessage = async (io, socket, messageData) => {
@@ -16,7 +16,7 @@ const chatMessage = async (io, socket, messageData) => {
             Furthermore, Gataama recognizes the importance of forging alliances and partnerships with like-minded organizations and individuals who share our vision. By collaborating with diverse stakeholders, we can amplify our impact, exchange best practices, and work towards common goals.
 
             In conclusion, Gataama is dedicated to unifying all peoples of African descent worldwide, including those in Africa, the Caribbean, Melanesian islands, Black communities in Asia, and beyond. By fostering cooperation and collaboration, we strive to build a powerful movement that promotes justice, equality, and prosperity for all. Together, we can create a society where our shared heritage is celebrated, our voices are heard, and our communities thrive.
-        `
+        `;
 
         const prompt = `
             The user is asking about Gataama, an organization that unites communities of African descent worldwide. 
@@ -25,6 +25,7 @@ const chatMessage = async (io, socket, messageData) => {
             User's Message: ${messageData.text}
         `;
 
+        // Send the prompt to the Together AI API
         const response = await together.chat.completions.create({
             messages: [
                 { role: "system", content: prompt },
@@ -33,15 +34,21 @@ const chatMessage = async (io, socket, messageData) => {
             model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
         });
 
-        const result = response.choices[0].message.content
-        io.to(socket.id).emit('chatMessage', { sender: 'AI', text: result })
+        // Extract the AI's response
+        const result = response.choices[0].message.content;
+
+        // Send the response back to the frontend
+        socket.emit('chatMessage', { text: result, sender: 'AI' });
         
     } catch (error) {
-        console.error('AI Error', error)
+        console.error('AI Error:', error);
 
-        // Sending error response to user
-        io.to(socket.id).emit("chatMessage", { text: "Sorry, I couldn't process your message.", sender: "AI" });
+        // Send an error response to the frontend
+        io.to(socket.id).emit('chatMessage', { 
+            text: "Sorry, I couldn't process your message. Please try again later.", 
+            sender: 'AI' 
+        });
     }
-}
+};
 
 module.exports = chatMessage;

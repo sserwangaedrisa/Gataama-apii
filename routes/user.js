@@ -10,6 +10,26 @@ const { isAdmin } = require("../middleware/role");
 
 /**
  * @openapi
+ * /user/admins:
+ *   get:
+ *     tags:
+ *       - User
+ *     security:
+ *       - bearerAuth: []
+ *     summary: retrive all admin accounts
+ *     responses:
+ *       200:
+ *         description: retrival successfull
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/RetriveAdmins'
+ */
+router.get(
+  "/admins", checkAuth, UserController.getAdmin)
+
+/**
+ * @openapi
  * /user/register:
  *   post:
  *     tags:
@@ -127,7 +147,7 @@ router.patch(
 
 /**
  * @openapi
- * /user/profile/:id:
+ * /user/profile/{id}:
  *   put:
  *     tags:
  *       - User
@@ -175,7 +195,7 @@ router.put(
 
 /**
  * @openapi
- * /user/:id:
+ * /user/{id}:
  *  delete:
  *    tags:
  *      - User
@@ -207,26 +227,6 @@ router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
-
-/**
- * @openapi
- * /user/admins:
- *   get:
- *     tags:
- *       - User
- *     security:
- *       - bearerAuth: []
- *     summary: retrive all admin accounts
- *     responses:
- *       200:
- *         description: retrival successfull
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/RetriveAdmins'
- */
-router.get(
-  "/admins", checkAuth, UserController.getAdmin)
 
 router.get(
   "/google/callback",

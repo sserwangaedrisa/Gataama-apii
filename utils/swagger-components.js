@@ -85,6 +85,51 @@ module.exports = {
                         },
                     },
                 },
+            },
+            Category: {
+                type: 'object',
+                properties: {
+                    status: { type: 'string' },
+                    message: { type: 'string' },
+                    data: {
+                        type: 'object',
+                        properties: {
+                            id: { type: 'number' },
+                            name: { type: 'string' }
+                        }
+                    }
+                }
+            },
+            Categories: {
+                type: 'object',
+                properties: {
+                    status: { type: 'string' },
+                    message: { type: 'string' },
+                    data: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                id: { type: 'number' },
+                                name: { type: 'string' }
+                            }
+                        }
+                    }
+                }
+            },
+            AddTeamInput: {
+                type: 'object',
+                properties: {
+                    name: { type: 'string' },
+                    position: { type: 'string' },
+                    description: { type: 'string' },
+                    youtube: { type: 'string' },
+                    linkedin: { type: 'string' },
+                    facebook: { type: 'string' },
+                    twitter: { type: 'string' },
+                    profilePicture: { type: 'file' },
+                },
+                required: ['name', 'position', 'description', 'youtube', 'linkedin', 'facebook', 'twitter', 'profilePicture'],
             }
         },
         securitySchemes: {

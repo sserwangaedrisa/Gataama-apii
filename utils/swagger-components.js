@@ -140,6 +140,18 @@ module.exports = {
                     parentId: { type: 'number', nullable: true },
                 },
                 required: ['content', 'postId', 'authorId'],
+            },
+            PostCreationInput: {
+                type: 'object',
+                properties: {
+                    title: { type: 'string' },
+                    content: { type: 'string' },
+                    published: { type: 'boolean' },
+                    isFeatured: { type: 'boolean' },
+                    categoryIds: { type: 'string' },
+                    imageUrl: { type: 'file' },
+                },
+                required: ['title', 'content', 'published', 'isFeatured', 'categoryIds', 'imageUrl'],
             }
         },
         securitySchemes: {

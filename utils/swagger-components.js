@@ -130,6 +130,28 @@ module.exports = {
                     profilePicture: { type: 'file' },
                 },
                 required: ['name', 'position', 'description', 'youtube', 'linkedin', 'facebook', 'twitter', 'profilePicture'],
+            },
+            CommentInput: {
+                type: 'object',
+                properties: {
+                    content: { type:'string' },
+                    postId: { type: 'number' },
+                    authorId: { type: 'number' },
+                    parentId: { type: 'number', nullable: true },
+                },
+                required: ['content', 'postId', 'authorId'],
+            },
+            PostCreationInput: {
+                type: 'object',
+                properties: {
+                    title: { type: 'string' },
+                    content: { type: 'string' },
+                    published: { type: 'boolean' },
+                    isFeatured: { type: 'boolean' },
+                    categoryIds: { type: 'string' },
+                    imageUrl: { type: 'file' },
+                },
+                required: ['title', 'content', 'published', 'isFeatured', 'categoryIds', 'imageUrl'],
             }
         },
         securitySchemes: {

@@ -130,6 +130,16 @@ module.exports = {
                     profilePicture: { type: 'file' },
                 },
                 required: ['name', 'position', 'description', 'youtube', 'linkedin', 'facebook', 'twitter', 'profilePicture'],
+            },
+            CommentInput: {
+                type: 'object',
+                properties: {
+                    content: { type:'string' },
+                    postId: { type: 'number' },
+                    authorId: { type: 'number' },
+                    parentId: { type: 'number', nullable: true },
+                },
+                required: ['content', 'postId', 'authorId'],
             }
         },
         securitySchemes: {

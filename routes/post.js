@@ -168,10 +168,8 @@ router.put(
 );
 router.delete("/:id", verifyToken, isAdmin, postController.deletePost);
 
-
 ///reaction route
 router.post('/:id/reactions', verifyToken, reactionController.addReaction);
-
 
 router.delete('/:id/reactions', verifyToken, reactionController.removeReaction);
 

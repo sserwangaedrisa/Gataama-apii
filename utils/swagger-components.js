@@ -152,6 +152,17 @@ module.exports = {
                     imageUrl: { type: 'file' },
                 },
                 required: ['title', 'content', 'published', 'isFeatured', 'categoryIds', 'imageUrl'],
+            },
+            LinkCreationModel: {
+                type: 'object',
+                properties: {
+                    amount: { type: 'string' },
+                    currency: { type: 'string' },
+                    email: { type: 'string' },
+                    fullNames: { type: 'string' },
+                    donationType: { type: 'string' },
+                    donationTitle: { type: 'string' }
+                }
             }
         },
         securitySchemes: {

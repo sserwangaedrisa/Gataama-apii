@@ -17,7 +17,6 @@ const translator = asyncHandler(async (req, res) => {
     });
     
     if(result){
-        console.log(result);
         return res.status(200).json({
             translatedText: result.text,
             from: result.raw[1][3],

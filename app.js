@@ -8,6 +8,8 @@ const bodyParser = require("body-parser");
 const path = require("path");
 const session = require("express-session");
 const passport = require("passport");
+const swaggerUi = require("swagger-ui-express")
+const swaggerJsDocs = require("swagger-jsdoc")
 
 // Import routes
 const UserRoutes = require("./routes/user");
@@ -25,6 +27,7 @@ const teamRoutes = require("./routes/team");
 const countryContactRoutes = require("./routes/countryContact");
 const donationRoutesSecond = require("./routes/donationSecond");
 const translateRoute = require("./routes/translator");
+const components = require("./utils/swagger-components")
 
 
 const app = express();
@@ -39,6 +42,26 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 app.use(morgan("dev"));
+
+// Swagger UI
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Gataama API",
+      version: "1.0.0",
+    },
+    components: components.components
+  },
+  security: [
+    {
+      bearerAuth: [],
+    }
+  ],
+  apis: ["./routes/*.js"], // Points to your API routes
+};
+const swaggerDocs = swaggerJsDocs(swaggerOptions)
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs))
 
 // Session and Passport setup
 app.use(

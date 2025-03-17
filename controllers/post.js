@@ -328,20 +328,16 @@ exports.getPopularPosts = async (req, res) => {
 
 
 exports.publishPost = async (req, res) => {
-
-
     const { id } = req.params;
     const { published } = req.body;
-
 
     try {
       const post = await prisma.post.update({
         where: {
           id: parseInt(id),
-          
         },
         data: {
-           published : published,
+          published : published,
         },
       });
   

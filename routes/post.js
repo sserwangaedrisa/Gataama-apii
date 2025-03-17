@@ -153,12 +153,68 @@ router.post(
   postController.createPost
 );
 
+/**
+ * @openapi
+ * /posts/publish/{id}:
+ *   put:
+ *     tags:
+ *       - Post
+ *     security:
+ *       - bearerAuth: []
+ *     summary: publish post by id
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: post id
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: 'object'
+ *             properties:
+ *               published:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: successful
+ *       500:
+ *         description: server error
+ */
 router.put(
   "/publish/:id",
   verifyToken,
   isAdmin,
   postController.publishPost
 );
+
+/**
+ * @openapi
+ * /posts/{id}:
+ *   put:
+ *     tags:
+ *       - Post
+ *     security:
+ *       - bearerAuth: []
+ *     summary: update post by id
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: post id
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             $ref: '#/components/schemas/PostCreationInput'
+ *     responses:
+ *       200:
+ *         description: successful
+ *       500:
+ *         description: server error
+ */
 router.put(
   "/:id",
   verifyToken,
@@ -166,14 +222,95 @@ router.put(
   upload.single("image"),
   postController.updatePost
 );
+
+/**
+ * @openapi
+ * /posts/{id}:
+ *   delete:
+ *     tags:
+ *       - Post
+ *     security:
+ *       - bearerAuth: []
+ *     summary: delete post
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         description: post id
+ *         required: true
+ *     response:
+ *       200:
+ *         description: successful
+ *       500:
+ *         description: server error
+ *     
+ */
 router.delete("/:id", verifyToken, isAdmin, postController.deletePost);
 
-
-///reaction route
+/**
+ * @openapi
+ * /posts/{id}/reactions:
+ *   post:
+ *     tags:
+ *       - Post
+ *       - Reaction
+ *     security:
+ *       - bearerAuth: []
+ *     summary: create reaction on post
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         description: post id
+ *         required: true
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: 'object'
+ *             properties:
+ *               type:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: successfull creation
+ *       500:
+ *         description: server error
+ */
 router.post('/:id/reactions', verifyToken, reactionController.addReaction);
 
-
+/**
+ * @openapi
+ * /posts/{id}/reactions:
+ *   delete:
+ *     tags:
+ *       - Post
+ *       - Reaction
+ *     security:
+ *       - bearerAuth: []
+ *     summary: remove reaction on post
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         description: post id
+ *         required: true
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: 'object'
+ *             properties:
+ *               type:
+ *                 type: string
+ *               authorId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: successful
+ *       500:
+ *         description: server error
+ *
+ */
 router.delete('/:id/reactions', verifyToken, reactionController.removeReaction);
-
 
 module.exports = router;

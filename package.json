@@ -37,6 +37,8 @@
     "sequelize": "^6.37.3",
     "socket.io": "^4.7.4",
     "stripe": "^17.4.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "together-ai": "^0.13.0",
     "uuid": "^9.0.1"
   },

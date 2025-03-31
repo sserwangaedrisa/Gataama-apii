@@ -75,10 +75,10 @@ app.use(passport.initialize());
 
 // Static files and routes
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.use("/healthz", (req, res) => {
+app.use("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "API is working",
+    message: "API is working well",
   });
 });
 
